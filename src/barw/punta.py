@@ -16,3 +16,4 @@ class Punta:
     activa : bool = True # indica si la punta está activa (puede elongarse o bifurcarse)
     generacion : int = 0 # generación de la punta (0 para la punta inicial, incrementa con cada bifurcación)
     id_padre : int = None # identificador de la punta madre (None para la punta inicial)
+    edad : int = 0 # lo creamos para gestionar el problema de aniquilación, ahora mismo excluimos la propia rama de la punta para la búsqueda de puntos cercanos, pero si la punta se acaba de bifurcar por primera vez, se aniquilará por estar cerca de su madre, así que le damos una edad de 0 al crearla y no se aniquila hasta que su edad sea mayor que 3 (Ra)

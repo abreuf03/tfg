@@ -37,4 +37,7 @@ class BARWConfig:
     max_puntas : int = 100000 #número máximo de puntas para evitar sobrecarga computacional
     max_pasos : int = 1000000 #número máximo de pasos para evitar sobrecarga computacional
 
+    #Gestionar autoaniquilación de puntas recién bifurcadas
+    pasos_exclusion_aniquilacion : int = 3 #número de pasos durante los cuales una punta recién bifurcada no puede ser aniquilada por estar cerca de su madre
+
 

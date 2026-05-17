@@ -129,50 +129,73 @@ class SimulacionBARW:
         self.siguiente_id_rama += 1
 
         return nueva_punta
-    
     def paso(self):
         """
         Ejecuta un paso temporal de la simulación.
         """
-        nuevas_puntas = [] # lista para almacenar las nuevas puntas creadas por bifurcación en este paso
+        nuevas_puntas = []
+        puntos_nuevos = []
 
         for punta in self.puntas:
             if not punta.activa:
                 continue
 
-            # Mover la punta
+            # 1. Mover la punta
             x_anterior, y_anterior, x_nueva, y_nueva = self.mover_punta(punta)
-            
-            # Verificar si la punta ha salido de los límites del dominio
+
+            # 2. Verificar si la punta ha salido de los límites del dominio
             if self.fuera_de_limites(punta):
                 punta.activa = False
                 self.contador_terminaciones += 1
                 continue
 
-            self.busqueda_espacial.agregar_punto(x_nueva, y_nueva, punta.id_rama)
-            self.conducto.append((x_anterior, y_anterior, x_nueva, y_nueva, punta.id_rama)) # guardar el movimiento para análisis posterior
+            # 3. Buscar aniquilación contra la red ya existente
+            if punta.edad >= self.config.pasos_exclusion_aniquilacion:
+                puntas_cercanas = self.busqueda_espacial.buscar_puntas_cercanas(
+                    x_nueva,
+                    y_nueva,
+                    self.config.Ra,
+                    excluir_id_rama=punta.id_rama
+                )
+            else:
+                puntas_cercanas = []
 
-            if self.usar_kdtree:
-                self.busqueda_espacial.construir_kdtree() # reconstruir el KDTree después de agregar nuevos puntos  
-            
-            # Verificar aniquilación por cercanía a otras puntas
-            puntas_cercanas = self.busqueda_espacial.buscar_puntas_cercanas(x_nueva, y_nueva, self.config.Ra, excluir_id_rama=punta.id_rama)
+            # 4. Guardar el segmento generado
+            self.conducto.append(
+                (x_anterior, y_anterior, x_nueva, y_nueva, punta.id_rama)
+            )
+
+            # 5. Guardar el punto para añadirlo después al índice espacial
+            puntos_nuevos.append((x_nueva, y_nueva, punta.id_rama))
+
+            # 6. Actualizar edad
+            punta.edad += 1
+
+            # 7. Si había colisión, la punta termina
             if puntas_cercanas:
                 punta.activa = False
                 self.contador_terminaciones += 1
                 continue
-            
-            
-            # Verificar si la punta se bifurca
+
+            # 8. Bifurcación estocástica
             if self.rng.random() < self.config.rb:
                 nueva_punta = self.crear_bifurcacion(punta)
                 nuevas_puntas.append(nueva_punta)
                 self.contador_bifurcaciones += 1
-            
-            
-        self.puntas.extend(nuevas_puntas) # agregar las nuevas puntas creadas por bifurcación a la lista de puntas activas
+
+        # 9. Añadir todos los puntos nuevos al índice espacial
+        for x, y, id_rama in puntos_nuevos:
+            self.busqueda_espacial.agregar_punto(x, y, id_rama)
+
+        # 10. Reconstruir el KDTree solo una vez por paso temporal
+        if self.usar_kdtree:
+            self.busqueda_espacial.construir_kdtree()
+
+        # 11. Añadir las puntas nuevas
+        self.puntas.extend(nuevas_puntas)
+
         self.contador_pasos += 1
-    
+
     def ejecutar(self):
         """
         Ejecuta la simulación del modelo BARW hasta alcanzar el tiempo total configurado
@@ -192,7 +215,7 @@ class SimulacionBARW:
         }
 
         num_pasos = int(self.config.tiempo_total / self.config.tiempo_paso)
-
+        num_pasos = min(num_pasos, self.config.max_pasos)
         for paso in range(num_pasos):   
             tiempo = paso * self.config.tiempo_paso
 
@@ -213,6 +236,13 @@ class SimulacionBARW:
 
             if num_pasos > self.config.max_pasos:
                 print(f"Simulación terminada en el paso {paso} (tiempo={tiempo:.2f}) - Se alcanzó el límite de pasos.")
+                break
+
+            if len(self.puntas) > self.config.max_puntas:
+                print(
+                    f"Simulación terminada en el paso {paso} "
+                    f"(tiempo={tiempo:.2f}) - Se alcanzó el máximo de puntas."
+                )
                 break
 
         return {
