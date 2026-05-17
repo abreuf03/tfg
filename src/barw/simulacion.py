@@ -1,0 +1,225 @@
+import numpy as np
+
+from .config import BARWConfig
+from .punta import Punta
+from .busqueda_espacial import ExhaustivaIndices, KDTreeIndices
+
+class SimulacionBARW:
+    """
+    Clase principal para ejecutar la simulación del modelo BARW.
+    """
+
+    def __init__(self, config: BARWConfig, usar_kdtree=False):
+        self.config = config
+        self.usar_kdtree = usar_kdtree
+
+        self.puntas = [] # lista de puntas activas
+        self.ramas = [] # lista de ramas (cada rama es una lista de puntas)
+        self.conducto = []
+        
+        self.rng = np.random.default_rng(self.config.semilla)
+
+        if self.usar_kdtree:
+            self.busqueda_espacial = KDTreeIndices()
+        else:
+            self.busqueda_espacial = ExhaustivaIndices()
+        
+        self.siguiente_id_punta = 0 # contador para asignar identificadores únicos a las puntas
+        self.siguiente_id_rama = 0 # contador para asignar identificadores únicos a las ramas
+
+        self.contador_pasos = 0 # contador de pasos de la simulación
+        self.contador_bifurcaciones = 0 # contador de bifurcaciones realizadas
+        self.contador_terminaciones = 0 # contador de terminaciones por aniquilación
+    
+
+    def inicializar(self):
+        """
+        Inicializa la simulación con una única punta activa situada
+        en el lado izquierdo del dominio.
+        """
+
+        x0 = self.config.x0
+        y0 = self.config.Ly / 2.0
+        theta0 = self.config.theta0
+
+        punta_inicial = Punta(x=x0, y=y0, theta=theta0, 
+                              id=self.siguiente_id_punta, id_rama=self.siguiente_id_rama,
+                              generacion=0, activa=True)
+        self.puntas.append(punta_inicial)
+        self.busqueda_espacial.agregar_punto(x0, y0, self.siguiente_id_rama)
+        self.ramas.append([punta_inicial]) # cada rama comienza con una única punta
+        self.siguiente_id_punta += 1
+        self.siguiente_id_rama += 1
+
+        if self.usar_kdtree:
+            self.busqueda_espacial.construir_kdtree()
+        
+    
+    def mover_punta(self, punta: Punta):
+        """
+        Mueve una punta activa según la dinámica de elongación y difusión.
+
+        Parámetros:
+            punta (Punta): La punta a mover.
+        
+        Devuelve:
+            x_anterior (float): La posición x anterior de la punta.
+            y_anterior (float): La posición y anterior de la punta.
+            x_nueva (float): La nueva posición x de la punta después del movimiento.
+            y_nueva (float): La nueva posición y de la punta después del movimiento.
+        """
+        #guardamos los valores anteriores para poder revertir el movimiento en caso de aniquilación
+        x_anterior = punta.x
+        y_anterior = punta.y
+
+        # Elongación en la dirección actual
+        dx = self.config.long_paso * np.cos(punta.theta)
+        dy = self.config.long_paso * np.sin(punta.theta)
+
+        # Difusión aleatoria del ángulo de elongación
+        dtheta = self.rng.uniform(-self.config.ang_amplitud, self.config.ang_amplitud) #en el artículo se menciona que el ángulo de difusión es aleatorio con una amplitud de pi/10, por lo que se toma un valor aleatorio entre -pi/10 y pi/10
+
+        # Actualizar posición y dirección de la punta
+        punta.x += dx
+        punta.y += dy
+        punta.theta += dtheta
+
+        return x_anterior, y_anterior, punta.x, punta.y
+
+
+    def fuera_de_limites(self, punta: Punta):
+        """
+        Verifica si una punta ha salido de los límites del dominio.
+
+        Parámetros:
+            punta (Punta): La punta a verificar.
+        
+        Devuelve:
+            bool: True si la punta está fuera de los límites, False en caso contrario.
+        """
+        return (punta.x < 0 or punta.x > self.config.Lx or
+                punta.y < 0 or punta.y > self.config.Ly)
+    
+
+    def crear_bifurcacion(self, punta_madre: Punta):
+        """
+        Crea una bifurcación a partir de una punta activa.
+
+        Parámetros:
+            punta_madre (Punta): La punta madre desde la cual crear la bifurcación.
+        
+        Devuelve:
+            Punta: La nueva punta creada por la bifurcación.
+        """
+        signo = self.rng.choice([-1, 1]) # la bifurcación puede ocurrir a la izquierda o a la derecha de la dirección de elongación
+        angulo_bifurcacion = signo * self.config.angulo_bifurcacion
+
+        nueva_punta = Punta(
+            x=punta_madre.x,
+            y=punta_madre.y,
+            theta=punta_madre.theta + angulo_bifurcacion, # la nueva punta se bifurca con un ángulo estocástico
+            id=self.siguiente_id_punta,
+            id_rama=self.siguiente_id_rama, # la nueva punta pertenece a una nueva rama
+            generacion=punta_madre.generacion + 1, # la generación de la nueva punta es una más que la generación de la punta madre
+            activa=True,
+            id_padre=punta_madre.id
+        )
+
+        self.siguiente_id_punta += 1
+        self.siguiente_id_rama += 1
+
+        return nueva_punta
+    
+    def paso(self):
+        """
+        Ejecuta un paso temporal de la simulación.
+        """
+        nuevas_puntas = [] # lista para almacenar las nuevas puntas creadas por bifurcación en este paso
+
+        for punta in self.puntas:
+            if not punta.activa:
+                continue
+
+            # Mover la punta
+            x_anterior, y_anterior, x_nueva, y_nueva = self.mover_punta(punta)
+            
+            # Verificar si la punta ha salido de los límites del dominio
+            if self.fuera_de_limites(punta):
+                punta.activa = False
+                self.contador_terminaciones += 1
+                continue
+
+            self.busqueda_espacial.agregar_punto(x_nueva, y_nueva, punta.id_rama)
+            self.conducto.append((x_anterior, y_anterior, x_nueva, y_nueva, punta.id_rama)) # guardar el movimiento para análisis posterior
+
+            if self.usar_kdtree:
+                self.busqueda_espacial.construir_kdtree() # reconstruir el KDTree después de agregar nuevos puntos  
+            
+            # Verificar aniquilación por cercanía a otras puntas
+            puntas_cercanas = self.busqueda_espacial.buscar_puntas_cercanas(x_nueva, y_nueva, self.config.Ra, excluir_id_rama=punta.id_rama)
+            if puntas_cercanas:
+                punta.activa = False
+                self.contador_terminaciones += 1
+                continue
+            
+            
+            # Verificar si la punta se bifurca
+            if self.rng.random() < self.config.rb:
+                nueva_punta = self.crear_bifurcacion(punta)
+                nuevas_puntas.append(nueva_punta)
+                self.contador_bifurcaciones += 1
+            
+            
+        self.puntas.extend(nuevas_puntas) # agregar las nuevas puntas creadas por bifurcación a la lista de puntas activas
+        self.contador_pasos += 1
+    
+    def ejecutar(self):
+        """
+        Ejecuta la simulación del modelo BARW hasta alcanzar el tiempo total configurado
+        o hasta que no queden puntas activas.
+
+        Devuelve:
+        Un diccionario con el historial de la simulación, incluyendo el tiempo, número de puntas activas, número de bifurcaciones, número de terminaciones y número total de puntas en cada paso.
+        """
+        self.inicializar()
+
+        historial={
+            "tiempo": [],
+            "num_puntas_activas": [],
+            "num_bifurcaciones": [],
+            "num_terminaciones": [],
+            "num_puntas_totales": []
+        }
+
+        num_pasos = int(self.config.tiempo_total / self.config.tiempo_paso)
+
+        for paso in range(num_pasos):   
+            tiempo = paso * self.config.tiempo_paso
+
+            self.paso()
+
+            puntas_activas = sum(p.activa for p in self.puntas)
+
+            # Guardar datos para análisis posterior
+            historial["tiempo"].append(tiempo)
+            historial["num_puntas_activas"].append(puntas_activas)
+            historial["num_bifurcaciones"].append(self.contador_bifurcaciones)
+            historial["num_terminaciones"].append(self.contador_terminaciones)
+            historial["num_puntas_totales"].append(len(self.puntas))
+
+            if puntas_activas == 0:
+                print(f"Simulación terminada en el paso {paso} (tiempo={tiempo:.2f}) - No quedan puntas activas.")
+                break
+
+            if num_pasos > self.config.max_pasos:
+                print(f"Simulación terminada en el paso {paso} (tiempo={tiempo:.2f}) - Se alcanzó el límite de pasos.")
+                break
+
+        return {
+            "historial": historial,
+            "conducto": self.conducto,
+            "puntas": self.puntas,
+            "config": self.config
+        }
+
+        
