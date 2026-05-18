@@ -30,6 +30,10 @@ class SimulacionBARW:
         self.contador_pasos = 0 # contador de pasos de la simulación
         self.contador_bifurcaciones = 0 # contador de bifurcaciones realizadas
         self.contador_terminaciones = 0 # contador de terminaciones por aniquilación
+       #temporales
+        self.colisiones_puntos = 0
+        self.colisiones_segmento = 0
+        self.colisiones_ambas = 0
     
 
     def inicializar(self):
@@ -129,14 +133,43 @@ class SimulacionBARW:
         self.siguiente_id_rama += 1
 
         return nueva_punta
+    
+    #no es necesario, no aporta nada nuevo a la comprobación por puntos
+    def distancia_punto_segmento(self,px, py, x0, y0, x1, y1):
+        """
+        Calcula la distancia entre un punto P=(px,py)
+        y el segmento que une A=(x0,y0) con B=(x1,y1).
+        """
+
+        p = np.array([px, py])
+        a = np.array([x0, y0])
+        b = np.array([x1, y1])
+
+        ab = b - a
+        ap = p - a
+
+        norma_ab2 = np.dot(ab, ab)
+
+        if norma_ab2 == 0:
+            return np.linalg.norm(p - a)
+
+        t = np.dot(ap, ab) / norma_ab2
+        t = np.clip(t, 0.0, 1.0)
+
+        proyeccion = a + t * ab
+
+        return np.linalg.norm(p - proyeccion)
+    
     def paso(self):
         """
         Ejecuta un paso temporal de la simulación.
         """
         nuevas_puntas = []
         puntos_nuevos = []
+        
 
         for punta in self.puntas:
+            #hay_colision = False
             if not punta.activa:
                 continue
 
@@ -157,6 +190,7 @@ class SimulacionBARW:
                     self.config.Ra,
                     excluir_id_rama=punta.id_rama
                 )
+
             else:
                 puntas_cercanas = []
 
@@ -216,6 +250,7 @@ class SimulacionBARW:
 
         num_pasos = int(self.config.tiempo_total / self.config.tiempo_paso)
         num_pasos = min(num_pasos, self.config.max_pasos)
+
         for paso in range(num_pasos):   
             tiempo = paso * self.config.tiempo_paso
 
@@ -245,11 +280,13 @@ class SimulacionBARW:
                 )
                 break
 
+        #print("Colisiones solo por segmentos:", self.colisiones_segmento)
+        #print("Colisiones solo por puntos:", self.colisiones_puntos)
+        #print("Colisiones por ambas:", self.colisiones_ambas)
+
         return {
             "historial": historial,
             "conducto": self.conducto,
             "puntas": self.puntas,
             "config": self.config
         }
-
-        

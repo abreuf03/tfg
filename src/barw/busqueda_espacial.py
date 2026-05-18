@@ -59,8 +59,9 @@ class KDTreeIndices:
         self.puntos = []
         self.ramas_ids = []
         self.kdtree = None
+        self.pasos = []
 
-    def agregar_punto(self, x,y, id_rama):
+    def agregar_punto(self, x,y, id_rama, paso=None):
         """
         Añade un punto de la red ya depositada.
 
@@ -71,6 +72,7 @@ class KDTreeIndices:
         """
         self.puntos.append((x, y))
         self.ramas_ids.append(id_rama)
+        self.pasos.append(paso)
     
     def construir_kdtree(self):
         """
