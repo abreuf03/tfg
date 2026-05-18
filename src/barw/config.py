@@ -17,7 +17,7 @@ class BARWConfig:
     #Parámetros de la dinámica
     v : float = 1.0 #velocidad de elongación
     rb : float = 0.1 #tasa de bifurcación
-    Ra : float = 3.0 #radio de aniquilación
+    Ra : float = 2.5 #radio de aniquilación
     long_paso : float = 1.0 #longitud del paso de los random walkers
     tiempo_paso : float = 1.0 #tiempo entre pasos de los random walkers
     ang_amplitud : float = pi/10 #amplitud del ángulo de difusión de la dirección de elongación
@@ -38,6 +38,6 @@ class BARWConfig:
     max_pasos : int = 1000000 #número máximo de pasos para evitar sobrecarga computacional
 
     #Gestionar autoaniquilación de puntas recién bifurcadas
-    pasos_exclusion_aniquilacion : int = 3 #número de pasos durante los cuales una punta recién bifurcada no puede ser aniquilada por estar cerca de su madre
+    pasos_exclusion_aniquilacion : int = 6 #número de pasos durante los cuales una punta recién bifurcada no puede ser aniquilada por estar cerca de su madre
 
 

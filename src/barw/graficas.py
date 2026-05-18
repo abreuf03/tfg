@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 # En este archivo se incluyen funciones para representar gráficamente
 # los resultados de la simulación BARW.
 
-def graficar_conducto(resultado, mostrar_puntas=True, guardar="resultados/barw_conducto.png"):
+def graficar_conducto(resultado, mostrar_puntas=True, guardar=None):
     """
     Dibuja la red de conductos generada por la simulación.
 
@@ -23,19 +23,14 @@ def graficar_conducto(resultado, mostrar_puntas=True, guardar="resultados/barw_c
     for segmento in conducto:
         x0, y0, x1, y1 = segmento[:4]
 
-        plt.plot([x0, x1], [y0, y1], linewidth=0.8)
+        plt.plot([x0, x1], [y0, y1], color="black", linewidth=0.8)
 
     if mostrar_puntas:
         puntas_activas_x = [p.x for p in puntas if p.activa]
         puntas_activas_y = [p.y for p in puntas if p.activa]
 
         if len(puntas_activas_x) > 0:
-            plt.scatter(
-                puntas_activas_x,
-                puntas_activas_y,
-                s=20,
-                label="Puntas activas"
-            )
+            plt.scatter(puntas_activas_x, puntas_activas_y, color="red", s=20)
 
     plt.xlim(0, config.Lx)
     plt.ylim(0, config.Ly)
@@ -55,7 +50,7 @@ def graficar_conducto(resultado, mostrar_puntas=True, guardar="resultados/barw_c
     plt.show()
 
 
-def graficar_historial(resultado, guardar="resultados/barw_historial.png"):
+def graficar_historial(resultado, guardar=None):
     """
     Dibuja la evolución temporal de la simulación.
 
