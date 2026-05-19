@@ -45,6 +45,9 @@ Al finalizar, el script genera dos tipos de figuras:
 
 También se incluye código comentado para ejecutar la simulación con distintas semillas y comparar resultados como el número de segmentos, bifurcaciones, terminaciones, puntas finales y avance máximo en la dirección `x`.
 
+![Conducto generado por el modelo BARW](resultados/barw_conducto_kdtree.png)
+![Historial de la simulación BARW](resultados/barw_historial_kdtree.png)
+
 ## Benchmark de búsqueda espacial
 
 ### `benchmark_kdtree.py`
