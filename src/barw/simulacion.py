@@ -217,6 +217,7 @@ class SimulacionBARW:
                 nuevas_puntas.append(nueva_punta)
                 self.contador_bifurcaciones += 1
 
+
         # 9. Añadir todos los puntos nuevos al índice espacial
         for x, y, id_rama in puntos_nuevos:
             self.busqueda_espacial.agregar_punto(x, y, id_rama)

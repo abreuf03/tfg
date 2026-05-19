@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from math import pi
+from math import radians
 
 #en este archivo incluiremos todos los parametros de configuracion
 #se toman del apartado "Mammary gland parameters and numerical simulations" del paper de Hannezo et. al. (2017) 
@@ -22,6 +23,7 @@ class BARWConfig:
     tiempo_paso : float = 1.0 #tiempo entre pasos de los random walkers
     ang_amplitud : float = pi/10 #amplitud del ángulo de difusión de la dirección de elongación
     angulo_bifurcacion: float = pi / 6
+    #angulo_bifurcacion : float = radians(50)
 
     #Parámetros del dominio temporal
     tiempo_total : float = 1000.0 #tiempo total de la simulación
