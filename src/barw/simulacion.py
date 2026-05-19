@@ -194,13 +194,7 @@ class SimulacionBARW:
             else:
                 puntas_cercanas = []
 
-            # 4. Guardar el segmento generado
-            self.conducto.append(
-                (x_anterior, y_anterior, x_nueva, y_nueva, punta.id_rama)
-            )
 
-            # 5. Guardar el punto para añadirlo después al índice espacial
-            puntos_nuevos.append((x_nueva, y_nueva, punta.id_rama))
 
             # 6. Actualizar edad
             punta.edad += 1
@@ -209,13 +203,27 @@ class SimulacionBARW:
             if puntas_cercanas:
                 punta.activa = False
                 self.contador_terminaciones += 1
+                punta.x = x_anterior
+                punta.y = y_anterior
                 continue
+            
+                        
+            # 5. Guardar el punto para añadirlo después al índice espacial
+            puntos_nuevos.append((x_nueva, y_nueva, punta.id_rama))
 
             # 8. Bifurcación estocástica
             if self.rng.random() < self.config.rb:
                 nueva_punta = self.crear_bifurcacion(punta)
                 nuevas_puntas.append(nueva_punta)
                 self.contador_bifurcaciones += 1
+            
+            # 4. Guardar el segmento generado
+            self.conducto.append(
+                (x_anterior, y_anterior, x_nueva, y_nueva, punta.id_rama)
+            )
+
+
+
 
 
         # 9. Añadir todos los puntos nuevos al índice espacial
@@ -246,7 +254,8 @@ class SimulacionBARW:
             "num_puntas_activas": [],
             "num_bifurcaciones": [],
             "num_terminaciones": [],
-            "num_puntas_totales": []
+            "num_puntas_totales": [],
+            "x_max": []
         }
 
         num_pasos = int(self.config.tiempo_total / self.config.tiempo_paso)
@@ -257,6 +266,11 @@ class SimulacionBARW:
 
             self.paso()
 
+            if self.conducto:
+                x_max = max(max(seg[0], seg[2]) for seg in self.conducto)
+            else:
+                x_max = 0.0
+
             puntas_activas = sum(p.activa for p in self.puntas)
 
             # Guardar datos para análisis posterior
@@ -265,6 +279,7 @@ class SimulacionBARW:
             historial["num_bifurcaciones"].append(self.contador_bifurcaciones)
             historial["num_terminaciones"].append(self.contador_terminaciones)
             historial["num_puntas_totales"].append(len(self.puntas))
+            historial["x_max"].append(x_max)
 
             if puntas_activas == 0:
                 print(f"Simulación terminada en el paso {paso} (tiempo={tiempo:.2f}) - No quedan puntas activas.")

@@ -86,6 +86,64 @@ def graficar_historial(resultado, guardar=None):
     plt.show()
 
 
+def graficar_xmax(resultado, guardar=None):
+    """
+    Dibuja la evolución temporal de x_max, la coordenada x máxima alcanzada por la red.
+
+    Parámetros:
+        resultado (dict): Diccionario devuelto por SimulacionBARW.ejecutar().
+        guardar (str, opcional): Ruta donde guardar la figura. Si es None, no se guarda.
+    """
+
+    historial = resultado["historial"]
+
+    tiempo = historial["tiempo"]
+    x_max = historial["x_max"]
+
+    plt.figure(figsize=(9, 5))
+
+    plt.plot(tiempo, x_max, label="x_max")
+
+    plt.xlabel("Tiempo")
+    plt.ylabel("x_max")
+    plt.title("Avance del frente de crecimiento (x_max) en la simulación BARW")
+    plt.legend()
+    plt.tight_layout()
+
+    if guardar is not None:
+        plt.savefig(guardar, dpi=300)
+
+    plt.show()
+
+
+def graficar_comparacion_semillas(df, guardar=None):
+    """
+    Representa el valor final de x_max para distintas semillas.
+
+    Parámetros:
+        df (pandas.DataFrame): Tabla con los resultados por semilla.
+        guardar (str, opcional): Ruta donde guardar la figura.
+    """
+
+    plt.figure(figsize=(8, 5))
+
+    plt.bar(
+        df["semilla"].astype(str),
+        df["x_max"]
+    )
+
+    plt.xlabel("Semilla")
+    plt.ylabel(r"$x_{\max}$ final")
+    plt.title("Comparación del avance máximo para distintas semillas")
+
+    plt.tight_layout()
+
+    if guardar is not None:
+        plt.savefig(guardar, dpi=300)
+
+    plt.show()
+
+
 def graficar_resumen(resultado):
     """
     Muestra las dos gráficas principales de la simulación:

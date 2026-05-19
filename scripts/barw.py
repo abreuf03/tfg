@@ -1,6 +1,6 @@
 from src.barw.config import BARWConfig
 from src.barw.simulacion import SimulacionBARW
-from src.barw.graficas import graficar_conducto, graficar_historial
+from src.barw.graficas import graficar_conducto, graficar_historial, graficar_xmax
 
 
 def main():
@@ -16,10 +16,12 @@ def main():
     if(kdtree):
         graficar_conducto(resultado, guardar="resultados/barw_conducto_kdtree.png")
         graficar_historial(resultado, guardar="resultados/barw_historial_kdtree.png")
+        graficar_xmax(resultado, guardar="resultados/barw_xmax_kdtree.png")
     
     else:
         graficar_conducto(resultado, guardar="resultados/barw_conducto_exhaustiva.png")
         graficar_historial(resultado, guardar="resultados/barw_historial_exhaustiva.png")
+        graficar_xmax(resultado, guardar="resultados/barw_xmax_exhaustiva.png")
     #semillas = [1, 2, 3, 4, 5, 10, 42, 100]
 
     #for semilla in semillas:
