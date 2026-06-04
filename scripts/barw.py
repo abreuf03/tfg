@@ -16,7 +16,9 @@ def main():
     if(kdtree):
         graficar_conducto(resultado, guardar="resultados/barw_conducto_kdtree.png")
         graficar_historial(resultado, guardar="resultados/barw_historial_kdtree.png")
-        graficar_xmax(resultado, guardar="resultados/barw_xmax_kdtree.png")
+        #graficar_xmax(resultado, guardar="resultados/barw_xmax_kdtree.png")
+        #graficar_conducto(resultado, guardar="resultados/barw_conducto_50g.png")
+        #graficar_historial(resultado, guardar="resultados/barw_historial_50g.png")
     
     else:
         graficar_conducto(resultado, guardar="resultados/barw_conducto_exhaustiva.png")

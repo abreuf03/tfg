@@ -212,7 +212,7 @@ class SimulacionBARW:
             puntos_nuevos.append((x_nueva, y_nueva, punta.id_rama))
 
             # 8. Bifurcación estocástica
-            if self.rng.random() < self.config.rb:
+            if self.rng.random() < self.config.pb:
                 nueva_punta = self.crear_bifurcacion(punta)
                 nuevas_puntas.append(nueva_punta)
                 self.contador_bifurcaciones += 1

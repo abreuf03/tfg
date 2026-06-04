@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-
+import numpy as np
 
 # En este archivo se incluyen funciones para representar gráficamente
 # los resultados de la simulación BARW.
@@ -152,3 +152,125 @@ def graficar_resumen(resultado):
 
     graficar_conducto(resultado)
     graficar_historial(resultado)
+
+def graficar_boxplot_semillas(df, guardar=None):
+    """
+    Representa la variabilidad entre semillas para varias métricas.
+    """
+
+    metricas = [
+        "x_max",
+        "tiempo_final",
+        "segmentos",
+        "bifurcaciones",
+        "terminaciones",
+    ]
+
+    for metrica in metricas:
+        plt.figure(figsize=(6, 5))
+
+        plt.boxplot(df[metrica], vert=True)
+        plt.ylabel(metrica)
+        plt.title(f"Distribución de {metrica} entre semillas")
+
+        plt.tight_layout()
+
+        if guardar is not None:
+            nombre = guardar.replace(".png", f"_{metrica}.png")
+            plt.savefig(nombre, dpi=300)
+
+        plt.show()
+
+
+def graficar_balance_bifurcacion_terminacion(df, guardar=None):
+    """
+    Representa el balance entre bifurcaciones y terminaciones.
+    """
+
+    plt.figure(figsize=(6, 5))
+
+    plt.scatter(
+        df["bifurcaciones"],
+        df["terminaciones"],
+        label="Simulaciones"
+    )
+
+    x_min = df["bifurcaciones"].min()
+    x_max = df["bifurcaciones"].max()
+
+    x = np.linspace(x_min, x_max, 100)
+    y = x + 1
+
+    plt.plot(x, y, linestyle="--", label=r"$N_{\mathrm{term}}=N_{\mathrm{bif}}+1$")
+
+    plt.xlabel("Bifurcaciones")
+    plt.ylabel("Terminaciones")
+    plt.title("Balance entre bifurcación y terminación")
+    plt.legend()
+    plt.tight_layout()
+
+    if guardar is not None:
+        plt.savefig(guardar, dpi=300)
+
+    plt.show()
+
+def graficar_tiempo_busquedas(resumen, guardar=None):
+    """
+    Representa el tiempo medio de ejecución para cada método de búsqueda espacial.
+    """
+
+    metodos = resumen["metodo"]
+    tiempos = resumen["tiempo_medio"]
+
+    errores_inf = tiempos - resumen["ic95_inf"]
+    errores_sup = resumen["ic95_sup"] - tiempos
+
+    errores = [errores_inf, errores_sup]
+
+    plt.figure(figsize=(7, 5))
+
+    plt.bar(
+        metodos,
+        tiempos,
+        yerr=errores,
+        capsize=5
+    )
+
+    plt.xlabel("Método de búsqueda espacial")
+    plt.ylabel("Tiempo medio de ejecución (s)")
+    plt.title("Comparación del tiempo de ejecución")
+
+    plt.tight_layout()
+
+    if guardar is not None:
+        plt.savefig(guardar, dpi=300)
+
+    plt.show()
+
+
+def graficar_tiempo_vs_segmentos(df, guardar=None):
+    """
+    Representa el tiempo de ejecución frente al número de segmentos generados.
+    """
+
+    plt.figure(figsize=(7, 5))
+
+    for metodo, grupo in df.groupby("metodo"):
+        plt.scatter(
+            grupo["segmentos"],
+            grupo["tiempo_ejecucion"],
+            label=metodo,
+            alpha=0.7
+        )
+
+    plt.xlabel("Número de segmentos generados")
+    plt.ylabel("Tiempo de ejecución (s)")
+    plt.title("Tiempo de ejecución frente al tamaño de la red")
+    plt.legend()
+
+    plt.tight_layout()
+
+    if guardar is not None:
+        plt.savefig(guardar, dpi=300)
+
+    plt.show()
