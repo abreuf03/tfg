@@ -9,7 +9,7 @@ El código se organiza en torno a dos bloques principales:
 1. **Simulación BARW**: generación de conductos ramificados mediante puntas activas que avanzan, se bifurcan, terminan o se aniquilan al encontrarse con otros conductos.
 2. **Modelos continuos de reacción-difusión**: resolución numérica de la ecuación del calor y de Fisher--KPP mediante esquemas de diferencias finitas, con comprobaciones de convergencia y velocidad del frente.
 
-Las figuras generadas se guardan en la carpeta `resultados/`.
+Las figuras generadas por los scripts principales se guardan en la carpeta `resultados/`. Además, se incluyen resultados complementarios en `paquetes_cerrados/`.
 
 ## Requisitos
 
@@ -176,6 +176,32 @@ También genera:
 
 La figura muestra la posición numérica del frente y un ajuste lineal a partir de un tiempo `t0`. La comparación permite estudiar cómo la velocidad efectiva se aproxima al valor asintótico esperado, teniendo en cuenta que en Fisher--KPP la convergencia hacia la velocidad límite presenta correcciones logarítmicas.
 
+## Resultados complementarios facilitados por los tutores
+
+Los siguientes resultados se han obtenido mediante **scripts facilitados por los tutores del TFG**. Se incorporan como material complementario para comparar el modelo BARW con las figuras de Hannezo et al. (2017), y se distinguen de los scripts implementados directamente en este repositorio.
+
+### Reconstrucción de la Figura 2
+
+![Reconstrucción de los paneles A, C, D, E y F de la Figura 2](paquetes_cerrados/resultado_B_y_C_Hannezo_Fig2/figures/figura_2ACDEF_sin_2B_colinda_layout.png)
+
+La composición reúne el esquema de los mecanismos del modelo BARW, la representación topológica de los árboles y las comparaciones estadísticas asociadas a los paneles D, E y F. El panel 2B no se incluye en esta lámina porque los datos suplementarios disponibles no contienen las coordenadas espaciales experimentales necesarias para reconstruirlo.
+
+### Comparación entre el modelo continuo y BARW
+
+![Comparación PDE y BARW inspirada en la Figura 3](paquetes_cerrados/hannezo2017_fig3_pde_barw/figures/fig3_pde_barw_box_layout.png)
+
+Esta figura presenta conjuntamente la aproximación continua mediante ecuaciones en derivadas parciales y la simulación estocástica BARW, permitiendo comparar ambas descripciones del crecimiento ramificado.
+
+### Animaciones de la dinámica BARW
+
+![Evolución espacial y topológica sincronizada](paquetes_cerrados/resultado_B_y_C_Hannezo_Fig2/animations/figura_2BC_AB_simultanea_lenta.gif)
+
+La animación muestra de forma sincronizada la evolución espacial de la red ductal y su representación topológica como árbol de ramas.
+
+![Evolución temporal de la red BARW](paquetes_cerrados/resultado_B_y_C_Hannezo_Fig2/animations/figura_2B_evolucion_temporal.gif)
+
+Esta animación permite observar paso a paso el avance de las puntas activas, las bifurcaciones y las terminaciones que determinan la geometría final de la red.
+
 ## Resumen de figuras generadas
 
 | Script | Figura | Interpretación |
@@ -188,6 +214,10 @@ La figura muestra la posición numérica del frente y un ajuste lineal a partir 
 | `test_fisher_cn.py` | `fisher_kpp_cn_perfiles.png` | Evolución del perfil de Fisher--KPP con Crank--Nicolson semimplícito. |
 | `test_fisher_cn.py` | `fisher_kpp_cn_posicion_frente.png` | Estimación de la velocidad del frente con el método semimplícito. |
 | `bramson_fisher.py` | `fisher_kpp_bramson_T100.png` | Comparación entre la posición del frente y un ajuste relacionado con la corrección de Bramson. |
+| Scripts facilitados por los tutores | `figura_2ACDEF_sin_2B_colinda_layout.png` | Reconstrucción conjunta de los paneles A, C, D, E y F de la Figura 2 de Hannezo et al. |
+| Scripts facilitados por los tutores | `fig3_pde_barw_box_layout.png` | Comparación visual entre la formulación continua PDE y la simulación BARW. |
+| Scripts facilitados por los tutores | `figura_2BC_AB_simultanea_lenta.gif` | Evolución sincronizada de la geometría espacial y la topología del árbol. |
+| Scripts facilitados por los tutores | `figura_2B_evolucion_temporal.gif` | Evolución temporal de la red ramificada generada por BARW. |
 
 ## Cómo reproducir los resultados
 
@@ -205,6 +235,8 @@ python bramson_fisher.py
 
 Los resultados gráficos y tablas se guardarán en la carpeta `resultados/`.
 
+Los resultados complementarios anteriores se generan con los scripts incluidos en sus respectivos directorios dentro de `paquetes_cerrados/`. Cada paquete contiene un `README` específico con las instrucciones de ejecución, los parámetros utilizados y los archivos de salida.
+
 ## Comentario final
 
-En conjunto, los scripts muestran tanto la implementación del modelo BARW como la validación de los métodos numéricos utilizados. El benchmark de `cKDTree` justifica la optimización de las búsquedas espaciales, mientras que los experimentos de Fisher--KPP y de la ecuación del calor sirven para comprobar la consistencia de los esquemas numéricos empleados.
+En conjunto, los scripts muestran tanto la implementación del modelo BARW como la validación de los métodos numéricos utilizados. El benchmark de `cKDTree` justifica la optimización de las búsquedas espaciales, mientras que los experimentos de Fisher--KPP y de la ecuación del calor permiten comprobar la consistencia de los esquemas numéricos. Los resultados facilitados por los tutores amplían esta documentación con comparaciones visuales respecto al trabajo de Hannezo et al. (2017).
