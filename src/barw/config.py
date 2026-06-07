@@ -17,7 +17,7 @@ class BARWConfig:
 
     #Parámetros de la dinámica
     v : float = 1.0 #velocidad de elongación
-    rb : float = 0.1 #tasa de bifurcación
+    pb : float = 0.1 #tasa de bifurcación
     Ra : float = 3 #radio de aniquilación
     long_paso : float = 1.0 #longitud del paso de los random walkers
     tiempo_paso : float = 1.0 #tiempo entre pasos de los random walkers

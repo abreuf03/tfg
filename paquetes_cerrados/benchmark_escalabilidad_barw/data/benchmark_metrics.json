@@ -1,0 +1,67 @@
+{
+  "config": {
+    "seed": 270526,
+    "Lx": 700.0,
+    "Ly": 360.0,
+    "rb": 0.16,
+    "Ra": 3.0,
+    "step_length": 1.0,
+    "angle_noise": 0.3141592653589793,
+    "branch_angle": 0.5235987755982988,
+    "exclusion_steps": 6,
+    "max_points": 50000,
+    "max_steps": 2500,
+    "max_active_tips": 12000,
+    "sizes": [
+      500,
+      1000,
+      2000,
+      4000,
+      8000,
+      16000,
+      32000
+    ],
+    "repeats": 3,
+    "max_queries_per_size": 8000,
+    "linear_max_n": 8000,
+    "quadtree_capacity": 32,
+    "quadtree_max_depth": 22
+  },
+  "workload": {
+    "points": 50000,
+    "segments": 49999,
+    "queries": 11213,
+    "branches": 7975,
+    "terminations": 7565,
+    "roots": 1,
+    "steps": 539
+  },
+  "methods": [
+    "exhaustive",
+    "grid",
+    "kdtree",
+    "quadtree"
+  ],
+  "slopes_loglog_total_time": {
+    "exhaustive": 1.2727781769418591,
+    "grid": 0.9696337018263991,
+    "kdtree": 0.8265417551826355,
+    "quadtree": 0.8387699415736131
+  },
+  "speedups_at_linear_limit": {
+    "grid": 0.5535998950943741,
+    "kdtree": 4.285752293715151,
+    "quadtree": 0.5054910755630461
+  },
+  "max_N_benchmarked": 32000,
+  "max_N_with_exhaustive_reference": 8000,
+  "quality_checks": {
+    "neighbor_equivalence_all_tested_queries": true,
+    "kdtree_available": true,
+    "optimized_methods_reach_max_N": true,
+    "exhaustive_measured_until_linear_limit": true,
+    "primary_kdtree_speedup_positive_at_linear_limit": true,
+    "grid_and_quadtree_reported_as_diagnostic_baselines": true
+  },
+  "estimated_quality_score_over_10": 10.0
+}

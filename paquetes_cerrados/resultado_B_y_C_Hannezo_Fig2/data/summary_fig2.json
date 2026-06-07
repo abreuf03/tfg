@@ -1,0 +1,110 @@
+{
+  "metadata": {
+    "fecha_ejecucion": "2026-05-26T13:12:02",
+    "python": "3.13.13",
+    "plataforma": "Windows-11-10.0.26200-SP0",
+    "directorio_proyecto": "F:\\StudProject\\TFG\\2025-2026\\Morfogenesis\\Scripts\\Elena\\New\\resultado_B_y_C_Hannezo_Fig2",
+    "directorio_figuras": "F:\\StudProject\\TFG\\2025-2026\\Morfogenesis\\Scripts\\Elena\\New\\resultado_B_y_C_Hannezo_Fig2\\figures",
+    "directorio_datos": "F:\\StudProject\\TFG\\2025-2026\\Morfogenesis\\Scripts\\Elena\\New\\resultado_B_y_C_Hannezo_Fig2\\data",
+    "directorio_animaciones": "F:\\StudProject\\TFG\\2025-2026\\Morfogenesis\\Scripts\\Elena\\New\\resultado_B_y_C_Hannezo_Fig2\\animations",
+    "seleccion_semillas": [
+      {
+        "semilla": 85,
+        "score": 9.89157124662187,
+        "metricas": {
+          "n_ramas": 292.0,
+          "n_segmentos": 2711.0,
+          "generacion_maxima": 54.0,
+          "x_max": 279.56767351696226,
+          "y_span": 149.83217069825469,
+          "balance_q_aprox": 0.5008576329331046,
+          "n_bifurcaciones": 291.0,
+          "n_terminaciones": 292.0
+        },
+        "origen": "busqueda_determinista_0_249"
+      },
+      {
+        "semilla": 39,
+        "score": 9.863757144864024,
+        "metricas": {
+          "n_ramas": 290.0,
+          "n_segmentos": 2802.0,
+          "generacion_maxima": 63.0,
+          "x_max": 279.4170687996247,
+          "y_span": 149.66072198867082,
+          "balance_q_aprox": 0.5008635578583766,
+          "n_bifurcaciones": 289.0,
+          "n_terminaciones": 290.0
+        },
+        "origen": "busqueda_determinista_0_249"
+      }
+    ]
+  },
+  "parametros": {
+    "r_b": 0.1,
+    "R_a": 3.0,
+    "l": 1.0,
+    "delta_t": 1.0,
+    "delta_theta": 0.3141592653589793,
+    "L_x": 280.0,
+    "L_y": 150.0,
+    "alpha_bifurcacion": 0.5235987755982988,
+    "pasos_exclusion_aniquilacion": 6,
+    "max_pasos": 1200,
+    "max_puntas": 50000,
+    "subtree_generacion_resaltar": 6,
+    "semilla_principal": 85,
+    "semilla_replica": 39,
+    "auto_seleccionar_semillas": true,
+    "seed_search_min": 0,
+    "seed_search_max": 250,
+    "seed_search_target_ramas": 300,
+    "seed_search_target_generacion": 45,
+    "seed_search_target_xmax": 260.0
+  },
+  "fidelidad_y_limitaciones": {
+    "panel_superior": "Simulation BARW",
+    "panel_inferior": "Synthetic stochastic replicate",
+    "datos_experimentales_disponibles": false,
+    "advertencia": "El panel inferior del paper es experimental. Sin las coordenadas reconstruidas originales no se puede afirmar reproducción exacta del panel Experiment.",
+    "modo_visual": "paper_exact_synthetic",
+    "elementos_docentes_eliminados": [
+      "titulo_superior",
+      "leyenda_externa",
+      "metricas_en_panel",
+      "marcadores_rojos_estaticos",
+      "caja_de_dominio_estatica"
+    ]
+  },
+  "simulacion_principal": {
+    "semilla": 85,
+    "n_segmentos": 2711,
+    "n_puntas_totales": 292,
+    "n_bifurcaciones": 291,
+    "n_terminaciones": 292,
+    "balance_q_aprox": 0.5008576329331046,
+    "generacion_maxima": 54,
+    "n_ramas": 292
+  },
+  "replica_estocastica": {
+    "semilla": 39,
+    "n_segmentos": 2802,
+    "n_puntas_totales": 290,
+    "n_bifurcaciones": 289,
+    "n_terminaciones": 290,
+    "balance_q_aprox": 0.5008635578583766,
+    "generacion_maxima": 63,
+    "n_ramas": 290
+  },
+  "subtree_destacado": {
+    "generacion_resaltar": 6,
+    "principal_dashed_raiz": 9,
+    "principal_dashed_n": 240,
+    "principal_caja_raiz": 15,
+    "principal_caja_n": 17,
+    "replica_dashed_raiz": 13,
+    "replica_dashed_n": 238,
+    "replica_caja_raiz": 35,
+    "replica_caja_n": 8
+  }
+}

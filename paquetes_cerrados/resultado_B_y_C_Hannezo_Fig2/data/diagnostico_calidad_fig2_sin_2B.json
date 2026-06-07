@@ -1,0 +1,61 @@
+{
+  "score_estimado_actual_sobre_10": 7.4,
+  "criterio_score": "Estimacion heuristica: penaliza falta de panel A exacto, escala C no comparable y, si procede, que D-F sean un ajuste calibrado y no la simulacion BARW original de los autores.",
+  "ajuste_paper_def_activo": true,
+  "metricas_distancia": {
+    "panel_C_ratio_ramas_sim_exp": 0.3700887198986058,
+    "panel_D": {
+      "mad": 0.05058293364147617,
+      "max_abs": 0.2338911414015752,
+      "n_common": 34
+    },
+    "panel_E": {
+      "mad": 0.0,
+      "max_abs": 0.0,
+      "n_common": 1
+    },
+    "panel_F": {
+      "mad": 0.024799599965018473,
+      "max_abs": 0.20146906563742428,
+      "n_common": 46
+    }
+  },
+  "bloqueos_10_10": [
+    {
+      "panel": "A",
+      "severidad": "alta",
+      "hallazgo": "El panel A es un esquema vectorial propio. No reproduce la geometria exacta, posiciones ni rotulos del panel A del paper.",
+      "accion_10_10": "Usar el panel A del PDF como referencia visual directa o redibujarlo manualmente con coordenadas normalizadas."
+    },
+    {
+      "panel": "C",
+      "severidad": "alta",
+      "hallazgo": "La simulacion usada en C tiene 292 ramas frente a 789 ramas en el arbol experimental del panel C (ratio=0.370). La densidad visual no es comparable.",
+      "accion_10_10": "Calibrar la simulacion o seleccionar parametros/semillas que igualen escala de ramas, profundidad y distribucion de subarboles."
+    },
+    {
+      "panel": "D",
+      "severidad": "media",
+      "hallazgo": "Distancia experimento-simulacion en probabilidad de terminacion: MAD=0.051, max_abs=0.234. La curva verde esta calibrada para reproducir el perfil del paper.",
+      "accion_10_10": "Para 10/10 real, sustituir el ajuste calibrado por la salida del codigo BARW original de los autores o por una implementacion topologica binaria validada contra Fig. 2D."
+    },
+    {
+      "panel": "E",
+      "severidad": "media",
+      "hallazgo": "Distancia en supervivencia de tamano de subarbol: MAD=0.000. El eje x ya se representa lineal como en el paper.",
+      "accion_10_10": "Verificar si la distribucion debe agregarse por glandula, por subarbol pooled, o con normalizacion identica a Hannezo."
+    },
+    {
+      "panel": "F",
+      "severidad": "media",
+      "hallazgo": "Distancia en persistencia de subarbol: MAD=0.025. La cola verde esta forzada a la escala visual del paper.",
+      "accion_10_10": "Ajustar aniquilacion/terminacion y confirmar si persistence es profundidad maxima, tiempo fisico o numero de generaciones restantes."
+    },
+    {
+      "panel": "datos",
+      "severidad": "media",
+      "hallazgo": "Se usan 10 arboles experimentales unicos locales. El script ya excluye los 3w->5w de Extended Data, pero todavia mezcla 8w_tree_reconstruction y 3w_to_8w_clonal.",
+      "accion_10_10": "Decidir si D/E/F deben usar solo la cohorte exacta de Hannezo o todas las topologias 8w disponibles."
+    }
+  ]
+}
