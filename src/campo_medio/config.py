@@ -18,7 +18,7 @@ class CampoMedioConfig:
     """
     D : float = 1.0 #coeficiente de difusión
     rb: float = 0.1 #probabilidad de bifurcación
-    re: float = 3.0 #tasa de elongación
+    re: float = 1.0 #tasa de elongación
     n0: float = 1 #densidad de capacidad local ->valor?
 
     a_in : float = 1.0 #densidad activa en la frontera de entrada

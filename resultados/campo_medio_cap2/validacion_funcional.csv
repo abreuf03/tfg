@@ -1,0 +1,3 @@
+forma_correcta,solucion_finita,frontera_izquierda,frontera_derecha,min_A,max_A,min_I,max_I,no_negatividad,incremento_minimo_I,I_no_decreciente,metodo,L,T,dx,dt,lambda_difusivo,x_ultimo_A_mayor_1e-4,x_ultimo_I_mayor_1e-4,distancia_A_a_frontera_derecha
+True,True,True,True,0.0,1.0,0.0,38.28010242988018,True,0.0,True,Euler explícito,60.0,15.0,0.2,0.005,0.12499999999999997,22.6,23.0,37.4
+True,True,True,True,0.0,1.0,0.0,38.28010242988018,True,0.0,True,IMEX--Crank--Nicolson,60.0,15.0,0.2,0.005,0.12499999999999997,22.8,23.0,37.2
