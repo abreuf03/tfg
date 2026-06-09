@@ -39,10 +39,8 @@ def resolver_euler_explicito(malla:Malla, config: CampoMedioConfig) -> (np.ndarr
     Resuelve el sistema de campo medio utilizando el método de Euler explícito.
 
     Parámetros:
-        malla:
-            Objeto Malla que define la discretización espacial y temporal.
-        config:
-            Parámetros del modelo de campo medio.
+        malla: Objeto Malla que define la discretización espacial y temporal.
+        config: Parámetros del modelo de campo medio.
 
     Devuelve:
         Una tupla (A, I) con las densidades de puntas activas e inactivas en cada paso temporal.
@@ -75,10 +73,8 @@ def resolver_imex_cn(malla:Malla, config: CampoMedioConfig) -> (np.ndarray, np.n
     Resuelve el sistema de campo medio utilizando el método IMEX Crank-Nicolson.
 
     Parámetros:
-        malla:
-            Objeto Malla que define la discretización espacial y temporal.
-        config:
-            Parámetros del modelo de campo medio.
+        malla: Objeto Malla que define la discretización espacial y temporal.
+        config: Parámetros del modelo de campo medio.
     
     Devuelve:
         Una tupla (A, I) con las densidades de puntas activas e inactivas en cada paso temporal.

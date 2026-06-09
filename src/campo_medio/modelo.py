@@ -18,12 +18,9 @@ def terminos_reaccion(a:np.ndarray, i:np.ndarray, config: CampoMedioConfig) -> (
     discretiza por separado en los métodos numéricos.
 
     Parámetros:
-        a:
-            Densidad de puntas activas.
-        i:
-            Densidad de conducto inactivo.
-        config:
-            Parámetros del modelo de campo medio.
+        a: Densidad de puntas activas.
+        i: Densidad de conducto inactivo.
+        config: Parámetros del modelo de campo medio.
 
     Devuelve:
         Una tupla (reaccion_a, reaccion_i).

@@ -30,7 +30,29 @@ def graficar_comparacion_metodos(
     I_imex: np.ndarray,
     ruta: str | Path,
 ) -> None:
-    """Compara Euler e IMEX--Crank--Nicolson en el instante final."""
+    """
+    Genera una figura comparativa de las soluciones obtenidas con Euler
+    explícito e IMEX--Crank--Nicolson en el instante temporal final.
+
+    La figura contiene dos subgráficas. La primera compara los perfiles de la
+    variable activa y la segunda compara los perfiles de la variable inactiva.
+    El resultado se guarda en la ruta indicada.
+
+    Parámetros:
+        malla: Malla espacio-temporal empleada en las simulaciones.
+        A_euler: Matriz con la solución de la variable activa obtenida mediante
+            Euler explícito.
+        I_euler: Matriz con la solución de la variable inactiva obtenida mediante
+            Euler explícito.
+        A_imex: Matriz con la solución de la variable activa obtenida mediante
+            IMEX--Crank--Nicolson.
+        I_imex: Matriz con la solución de la variable inactiva obtenida mediante
+            IMEX--Crank--Nicolson.
+        ruta: Ruta del archivo en el que se guardará la figura generada.
+
+    Devuelve:
+        No devuelve ningún valor. La figura se guarda en la ruta indicada.
+    """
     ruta = _preparar_ruta(ruta)
     fig, ejes = plt.subplots(2, 1, figsize=(8, 7), sharex=True)
 
@@ -72,7 +94,22 @@ def graficar_evolucion_campo_medio(
     ruta: str | Path,
     nombre_metodo: str = "IMEX--Crank--Nicolson",
 ) -> None:
-    """Representa la evolución temporal de ambas especies."""
+    """
+    Representa la evolución temporal de ambas especies.
+
+    Parámetros:
+        malla: Malla espacio-temporal empleada en las simulaciones.
+        A: Matriz con los valores de la variable activa. Cada fila corresponde
+            a un instante temporal y cada columna a un nodo espacial.
+        I: Matriz con los valores de la variable inactiva. Cada fila corresponde
+            a un instante temporal y cada columna a un nodo espacial.
+        tiempos: Secuencia de tiempos en los que se quieren representar los perfiles.
+        ruta: Ruta del archivo en el que se guardará la figura generada.
+        nombre_metodo: Nombre del método numérico utilizado.
+
+    Devuelve:
+        No devuelve ningún valor. La figura se guarda en la ruta indicada.
+    """
     ruta = _preparar_ruta(ruta)
     fig, ejes = plt.subplots(2, 1, figsize=(8, 7), sharex=True)
 
@@ -104,7 +141,18 @@ def graficar_balance_discreto(
     residuo_imex: np.ndarray,
     ruta: str | Path,
 ) -> None:
-    """Representa el residuo de la identidad de balance en cada paso."""
+    """
+    Representa el residuo de la identidad de balance en cada paso.
+
+    Parámetros:
+        t: Array con los tiempos de los pasos temporales.
+        residuo_euler: Array con los residuos obtenidos mediante Euler explícito.
+        residuo_imex: Array con los residuos obtenidos mediante IMEX--Crank--Nicolson.
+        ruta: Ruta del archivo en el que se guardará la figura generada.
+
+    Devuelve:
+        No devuelve ningún valor. La figura se guarda en la ruta indicada.
+    """
     ruta = _preparar_ruta(ruta)
     fig, ax = plt.subplots(figsize=(8, 5))
 
@@ -134,7 +182,17 @@ def graficar_convergencia(
     errores: dict[str, np.ndarray | list[float]],
     ruta: str | Path,
 ) -> None:
-    """Gráfica log--log de los errores de autorrefinamiento."""
+    """
+    Gráfica log--log de los errores de autorrefinamiento.
+
+    Parámetros:
+        pasos: Array con los tamaños de paso espacial.
+        errores: Diccionario con los errores de autorrefinamiento para cada método.
+        ruta: Ruta del archivo en el que se guardará la figura generada.
+
+    Devuelve:
+        No devuelve ningún valor. La figura se guarda en la ruta indicada.
+    """
     ruta = _preparar_ruta(ruta)
     pasos = np.asarray(pasos, dtype=float)
 
