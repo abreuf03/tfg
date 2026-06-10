@@ -12,5 +12,13 @@ venv/
 .DS_Store
 
 
-# Resultados num�ricos pesados
-resultados/campo_medio_cap4/solucion_pulso_campo_medio.npz
+# Soluciones numéricas pesadas
+resultados/**/*.npz
+resultados/**/*.npy
+
+# CSV generados automáticamente
+resultados/**/*.csv
+
+# Conservar tablas-resumen seleccionadas
+!resultados/**/resumen_*.csv
+!resultados/**/tabla_*.csv
