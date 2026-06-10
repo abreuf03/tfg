@@ -19,11 +19,26 @@ import numpy as np
 BASE_DIR = Path(__file__).resolve().parent
 
 
+#def find_repo_root(start: Path) -> Path:
+#    for path in [start, *start.parents]:
+#        if (path / "references" / "videos").exists():
+#            return path
+#    raise RuntimeError("No se encontro la raiz del proyecto desde el script.")
+
+
 def find_repo_root(start: Path) -> Path:
+    """Localiza la raíz del proyecto actual."""
     for path in [start, *start.parents]:
-        if (path / "references" / "videos").exists():
+        if (
+            (path / "src").is_dir()
+            and (path / "paquetes_cerrados").is_dir()
+        ):
             return path
-    raise RuntimeError("No se encontro la raiz del proyecto desde el script.")
+
+    raise RuntimeError(
+        "No se encontró la raíz del proyecto desde el script."
+    )
+
 
 
 REPO_ROOT = find_repo_root(BASE_DIR)

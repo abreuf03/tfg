@@ -417,3 +417,95 @@ def trayectoria_pico(
     return posiciones
 
 
+
+def ajustar_velocidad_trayectoria(
+    t: np.ndarray,
+    posiciones: np.ndarray,
+    t_min: float,
+    t_max: float,
+) -> dict[str, float | int | np.ndarray]:
+    """
+    Ajusta una recta a la trayectoria del máximo de A en una ventana temporal.
+
+    Parámetros:
+        t: Array unidimensional con los instantes temporales correspondientes a las posiciones. 
+        posiciones: Array unidimensional con las posiciones del máximo de A en cada instante.
+        t_min: Límite inferior de la ventana temporal para el ajuste.
+        t_max: Límite superior de la ventana temporal para el ajuste.
+    
+    Devuelve:
+        Un diccionario con los resultados del ajuste, incluyendo la velocidad
+        estimada, la ordenada en el origen, el coeficiente de determinación R²,
+        el número de puntos utilizados en el ajuste, la máscara booleana que
+        indica los puntos dentro de la ventana temporal, los arrays de t y
+        posiciones utilizados para el ajuste, las predicciones de la recta
+        ajustada y los residuos del ajuste.
+    """
+    t = np.asarray(t, dtype=float)
+    posiciones = np.asarray(posiciones, dtype=float)
+
+    if t.ndim != 1 or posiciones.ndim != 1:
+        raise ValueError("t y posiciones deben ser vectores unidimensionales.")
+
+    if t.size != posiciones.size:
+        raise ValueError("t y posiciones deben tener la misma longitud.")
+
+    if t_min >= t_max:
+        raise ValueError("Debe cumplirse t_min < t_max.")
+
+    mascara = (
+        (t >= t_min)
+        & (t <= t_max)
+        & np.isfinite(t)
+        & np.isfinite(posiciones)
+    )
+
+    t_ajuste = t[mascara]
+    x_ajuste = posiciones[mascara]
+
+    if t_ajuste.size < 3:
+        raise ValueError(
+            "No hay suficientes puntos dentro de la ventana temporal."
+        )
+
+    velocidad, ordenada = np.polyfit(
+        t_ajuste,
+        x_ajuste,
+        deg=1,
+    )
+
+    prediccion = velocidad * t_ajuste + ordenada
+    residuos = x_ajuste - prediccion
+
+    suma_residuos = float(
+        np.sum(residuos**2)
+    )
+    suma_total = float(
+        np.sum(
+            (x_ajuste - np.mean(x_ajuste)) ** 2
+        )
+    )
+
+    if suma_total > 0.0:
+        r2 = 1.0 - suma_residuos / suma_total
+    else:
+        r2 = 1.0
+
+    return {
+        "t_min": float(t_min),
+        "t_max": float(t_max),
+        "velocidad": float(velocidad),
+        "ordenada": float(ordenada),
+        "r2": float(r2),
+        "n_puntos": int(t_ajuste.size),
+        "mascara": mascara,
+        "t_ajuste": t_ajuste,
+        "x_ajuste": x_ajuste,
+        "prediccion": prediccion,
+        "residuos": residuos,
+    }
+
+
+#funciones de los tutores
+
+

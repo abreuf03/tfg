@@ -110,3 +110,46 @@ def resolver_imex_cn(malla:Malla, config: CampoMedioConfig) -> (np.ndarray, np.n
     
     return A, I
     
+
+def resolver_imex_cn_reducido(malla:Malla, config: CampoMedioConfig) -> (np.ndarray, np.ndarray):
+    """
+    Resuelve el sistema de campo medio utilizando el método IMEX Crank-Nicolson.
+
+    Parámetros:
+        malla: Objeto Malla que define la discretización espacial y temporal.
+        config: Parámetros del modelo de campo medio.
+    
+    Devuelve:
+        Una tupla (A, I) con las densidades de puntas activas e inactivas en cada paso temporal.
+    """
+    lambda_ = config.D * malla.dt / (2 * malla.dx**2)
+
+    A, I = inicializar(malla, config)
+
+    m = malla.nx - 2
+    
+    #params Thomas
+    d_inf = -lambda_ * np.ones(m-1) #diagonal inferior
+    d_prin = (1 + 2*lambda_) * np.ones(m) #diagonal principal
+    d_sup = -lambda_ * np.ones(m-1) #diagonal superior
+
+    for n in range(malla.nt-1):
+        d = np.zeros(m)
+
+        reaccion_a = config.rb * A[n, :] * (1.0 - I[n, :] / config.n0)
+        reaccion_i = config.re * A[n, :]
+
+        for j in range(1, malla.nx-1):
+            d[j-1] = lambda_ * A[n, j-1] + (1 - 2*lambda_) * A[n, j] + lambda_ * A[n, j+1] + malla.dt * reaccion_a[j]
+       
+        # corrección por frontera izquierda no nula en el tiempo n+1
+        d[0] += lambda_ * config.a_in
+
+        A[n+1,0]= config.a_in #condición de frontera izquierda
+        A[n+1,-1] = config.a_out #condición de frontera derecha
+        A[n+1, 1:-1] = thomas(d_inf, d_prin, d_sup, d)
+
+        I[n+1, :] = I[n, :] + malla.dt * reaccion_i
+
+    
+    return A, I
