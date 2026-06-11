@@ -262,9 +262,12 @@ class SimulacionBARW:
         num_pasos = min(num_pasos, self.config.max_pasos)
 
         for paso in range(num_pasos):   
-            tiempo = paso * self.config.tiempo_paso
 
-            self.paso()
+
+            self.paso() #aquí se avanza un paso, por eso para el tiempo es paso+1
+            tiempo = (paso+1) * self.config.tiempo_paso #antes guardamos paso 0 en t=1
+
+            
 
             if self.conducto:
                 x_max = max(max(seg[0], seg[2]) for seg in self.conducto)
@@ -282,16 +285,16 @@ class SimulacionBARW:
             historial["x_max"].append(x_max)
 
             if puntas_activas == 0:
-                print(f"Simulación terminada en el paso {paso} (tiempo={tiempo:.2f}) - No quedan puntas activas.")
+                print(f"Simulación terminada en el paso {paso+1} (tiempo={tiempo:.2f}) - No quedan puntas activas.")
                 break
 
             if num_pasos > self.config.max_pasos:
-                print(f"Simulación terminada en el paso {paso} (tiempo={tiempo:.2f}) - Se alcanzó el límite de pasos.")
+                print(f"Simulación terminada en el paso {paso+1} (tiempo={tiempo:.2f}) - Se alcanzó el límite de pasos.")
                 break
 
             if len(self.puntas) > self.config.max_puntas:
                 print(
-                    f"Simulación terminada en el paso {paso} "
+                    f"Simulación terminada en el paso {paso+1} "
                     f"(tiempo={tiempo:.2f}) - Se alcanzó el máximo de puntas."
                 )
                 break

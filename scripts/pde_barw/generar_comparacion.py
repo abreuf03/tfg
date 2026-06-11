@@ -7,18 +7,123 @@ from paquetes_cerrados.hannezo2017_fig3_pde_barw.reproducir_fig3_hannezo_pde_bar
     BARWEnsembleConfig,
     aggregate_front_statistics,
     barw_profile_from_state,
-    collapse_barw_profiles_moving_frame,
-    collapse_pde_profiles_moving_frame,
-    compute_barw_pde_comparison,
     fit_speed,
     fit_speed_with_mask,
     grouped_profile_rows,
-    normalized,
-    sem,
-    smooth_profile,
 )
 from src.barw.config import BARWConfig
 from src.barw.simulacion import SimulacionBARW
+
+
+from pathlib import Path
+
+minimo_supervivientes = 5
+
+
+RAIZ_PROYECTO = Path(__file__).resolve().parents[2]
+
+RESULTADOS = (
+    RAIZ_PROYECTO
+    / "resultados"
+    / "comparacion_barw_pde"
+)
+
+RESULTADOS.mkdir(
+    parents=True,
+    exist_ok=True,
+)
+
+
+def guardar_resultados_barw(
+    resultados: dict[str, object],
+) -> None:
+    """Guarda los resultados principales del ensemble BARW."""
+
+    pd.DataFrame(
+        resultados["history"]
+    ).to_csv(
+        RESULTADOS / "barw_historial.csv",
+        index=False,
+    )
+
+    pd.DataFrame(
+        resultados["front_stats"]
+    ).to_csv(
+        RESULTADOS / "barw_estadisticas_frente.csv",
+        index=False,
+    )
+
+    pd.DataFrame(
+        resultados["peak_stats"]
+    ).to_csv(
+        RESULTADOS / "barw_estadisticas_pico.csv",
+        index=False,
+    )
+
+    pd.DataFrame(
+        resultados["profile_rows_raw"]
+    ).to_csv(
+        RESULTADOS / "barw_perfiles_crudos.csv",
+        index=False,
+    )
+
+    pd.DataFrame(
+        resultados["profile_rows_mean"]
+    ).to_csv(
+        RESULTADOS / "barw_perfiles_medios_todas.csv",
+        index=False,
+    )
+
+    pd.DataFrame(
+        resultados["profile_rows_mean_alive"]
+    ).to_csv(
+        RESULTADOS / "barw_perfiles_medios_vivas.csv",
+        index=False,
+    )
+
+    pd.DataFrame(
+        resultados["seed_summary"]
+    ).to_csv(
+        RESULTADOS / "barw_resumen_semillas.csv",
+        index=False,
+    )
+
+    pd.DataFrame(
+        resultados["final_segments"]
+    ).to_csv(
+        RESULTADOS / "barw_segmentos_semilla_referencia.csv",
+        index=False,
+    )
+
+    pd.DataFrame(
+        resultados["final_tips"]
+    ).to_csv(
+        RESULTADOS / "barw_puntas_semilla_referencia.csv",
+        index=False,
+    )
+
+    # Los diccionarios de ajuste pueden contener vectores.
+    # Se guardan únicamente sus valores escalares.
+    for nombre in (
+        "speed_fit_front_all",
+        "speed_fit_front_alive",
+        "speed_fit_peak_alive",
+    ):
+        ajuste = resultados[nombre]
+
+        ajuste_escalar = {
+            clave: valor
+            for clave, valor in ajuste.items()
+            if np.isscalar(valor)
+        }
+
+        pd.DataFrame(
+            [ajuste_escalar]
+        ).to_csv(
+            RESULTADOS / f"{nombre}.csv",
+            index=False,
+        )
+
 
 
 def posicion_pico_activo(
@@ -113,7 +218,7 @@ def estadisticas_pico_activo(
     valid_peak = (
         peak_stats_df["n_alive"]
         .to_numpy(dtype=int)
-        >= 5
+        >= minimo_supervivientes
     )
 
     speed_fit_peak_alive = fit_speed_with_mask(
@@ -241,7 +346,7 @@ def ejecutar_barw_comparacion(cfg:BARWEnsembleConfig,) -> dict[str, object]:
     stats_time = np.asarray([r["time"] for r in front_stats], dtype=float)
     front_all = np.asarray([r["front_mean_all"] for r in front_stats], dtype=float)
     front_alive = np.asarray([r["front_mean_alive"] for r in front_stats], dtype=float)
-    valid_alive = np.asarray([r["n_alive"] >= 5 for r in front_stats], dtype=bool)
+    valid_alive = np.asarray([r["n_alive"] >= minimo_supervivientes for r in front_stats], dtype=bool)
     speed_fit_front_all = fit_speed(stats_time, front_all, t_min=60.0, x_max=0.94 * cfg.Lx)
     speed_fit_front_alive = fit_speed_with_mask(stats_time, front_alive, valid_alive, t_min=60.0, x_max=0.94 * cfg.Lx)
     peak_stats, speed_fit_peak_alive = (estadisticas_pico_activo(all_history,cfg,)
@@ -265,6 +370,7 @@ def ejecutar_barw_comparacion(cfg:BARWEnsembleConfig,) -> dict[str, object]:
     return {
         "history": all_history,
         "front_stats": front_stats,
+        "peak_stats": peak_stats,
         "profile_rows_raw": profile_rows_raw,
         "profile_rows_mean": profile_rows_mean_all,
         "profile_rows_mean_alive": profile_rows_mean_alive,
@@ -275,3 +381,126 @@ def ejecutar_barw_comparacion(cfg:BARWEnsembleConfig,) -> dict[str, object]:
         "speed_fit_front_alive": speed_fit_front_alive,
         "speed_fit_peak_alive": speed_fit_peak_alive,
     }
+
+
+
+
+def main() -> None:
+    # Primera prueba: usar solo cinco semillas.
+    # Cuando el resultado sea correcto, sustituir 1005 por 1100.
+    semillas = tuple(range(1000, 1100))
+
+    cfg = BARWEnsembleConfig(
+        seeds=semillas,
+        Lx=280.0,
+        Ly=150.0,
+        rb=0.1,
+        Ra=3.0,
+        total_time=300.0,
+        step_time=1.0,
+        step_length=1.0,
+        n_bins=120,
+        snapshot_times=(
+            120,
+            140,
+            160,
+            180,
+            200,
+            220,
+            240,
+            260,
+            280,
+            300,
+        ),
+        collapse_times=(
+            140,
+            180,
+            220,
+            260,
+            300,
+        ),
+    )
+
+    print("=== GENERACIÓN DEL ENSEMBLE BARW ===")
+    print(f"Número de semillas: {len(cfg.seeds)}")
+    print(f"Dominio: [0, {cfg.Lx}] x [0, {cfg.Ly}]")
+    print(f"Tiempo final: {cfg.total_time}")
+    print(f"Probabilidad de bifurcación: {cfg.rb}")
+    print(f"Radio de aniquilación: {cfg.Ra}")
+    print(f"Número de bins: {cfg.n_bins}")
+
+    resultados = ejecutar_barw_comparacion(cfg)
+
+    guardar_resultados_barw(resultados)
+
+    resumen_semillas = pd.DataFrame(
+        resultados["seed_summary"]
+    )
+
+    supervivientes = int(
+        resumen_semillas["survived_to_T"].sum()
+    )
+
+    fraccion_supervivencia = (
+        supervivientes
+        / len(resumen_semillas)
+    )
+
+    print("\n=== RESUMEN DEL ENSEMBLE ===")
+    print(
+        "Realizaciones supervivientes: "
+        f"{supervivientes}/{len(resumen_semillas)}"
+    )
+    print(
+        "Fracción de supervivencia: "
+        f"{fraccion_supervivencia:.4f}"
+    )
+
+    print("\nAjuste del frente acumulado, todas las realizaciones:")
+    print(resultados["speed_fit_front_all"])
+
+    print("\nAjuste del frente acumulado, realizaciones vivas:")
+    print(resultados["speed_fit_front_alive"])
+
+    print("\nAjuste del pico activo, realizaciones vivas:")
+    print(resultados["speed_fit_peak_alive"])
+
+    print(
+        "\nResultados guardados en: "
+        f"{RESULTADOS.resolve()}"
+    )
+
+    diagnostico_frente = pd.DataFrame(
+        resultados["front_stats"]
+    )
+
+    print(
+        diagnostico_frente.loc[
+            diagnostico_frente["time"].isin(
+                [0.0, 30.0, 60.0, 100.0, 200.0, 300.0]
+            ),
+            [
+                "time",
+                "n_alive",
+                "survival_fraction",
+                "front_mean_alive",
+            ],
+        ].to_string(index=False)
+    )
+
+    diagnostico_pico = pd.DataFrame(
+        resultados["peak_stats"]
+    )
+
+    print(
+        diagnostico_pico.loc[
+            diagnostico_pico["time"].isin(
+                [0.0, 30.0, 60.0, 100.0, 200.0, 300.0]
+            )
+        ].to_string(index=False)
+    )
+
+
+if __name__ == "__main__":
+    main()
+
