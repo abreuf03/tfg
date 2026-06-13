@@ -6,24 +6,28 @@ from src.barw.graficas import graficar_conducto, graficar_historial, graficar_xm
 def main():
     config = BARWConfig()
 
-    kdtree = True # Cambia a False para usar búsqueda exhaustiva
-
-    simulacion = SimulacionBARW(config=config, usar_kdtree=kdtree)
+    #kdtree = True # Cambia a False para usar búsqueda exhaustiva
+    metodo =2
+    simulacion = SimulacionBARW(config=config, metodo_busqueda=metodo)
     resultado = simulacion.ejecutar()
 
 
 
-    if(kdtree):
+    if(metodo == 1):
         graficar_conducto(resultado, guardar="resultados/barw_conducto_kdtree.png")
         graficar_historial(resultado, guardar="resultados/barw_historial_kdtree.png")
         #graficar_xmax(resultado, guardar="resultados/barw_xmax_kdtree.png")
         #graficar_conducto(resultado, guardar="resultados/barw_conducto_50g.png")
         #graficar_historial(resultado, guardar="resultados/barw_historial_50g.png")
     
-    else:
+    elif(metodo == 0):
         graficar_conducto(resultado, guardar="resultados/barw_conducto_exhaustiva.png")
         graficar_historial(resultado, guardar="resultados/barw_historial_exhaustiva.png")
         graficar_xmax(resultado, guardar="resultados/barw_xmax_exhaustiva.png")
+    elif(metodo == 2):
+        graficar_conducto(resultado, guardar="resultados/barw_conducto_quadtree.png")
+        graficar_historial(resultado, guardar="resultados/barw_historial_quadtree.png")
+        graficar_xmax(resultado, guardar="resultados/barw_xmax_quadtree.png")
     #semillas = [1, 2, 3, 4, 5, 10, 42, 100]
 
     #for semilla in semillas:

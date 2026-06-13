@@ -2,16 +2,17 @@ import numpy as np
 
 from .config import BARWConfig
 from .punta import Punta
-from .busqueda_espacial import ExhaustivaIndices, KDTreeIndices
+from .busqueda_espacial import ExhaustivaIndices, KDTreeIndices, QuadTreeNode, QuadTreeIndices
 
 class SimulacionBARW:
     """
     Clase principal para ejecutar la simulación del modelo BARW.
     """
 
-    def __init__(self, config: BARWConfig, usar_kdtree=False):
+    def __init__(self, config: BARWConfig, metodo_busqueda:int=0):
         self.config = config
-        self.usar_kdtree = usar_kdtree
+        # 0: Exhaustiva, 1: KDTree, 2: QuadTree
+        self.metodo_busqueda = metodo_busqueda
 
         self.puntas = [] # lista de puntas activas
         self.ramas = [] # lista de ramas (cada rama es una lista de puntas)
@@ -19,10 +20,27 @@ class SimulacionBARW:
         
         self.rng = np.random.default_rng(self.config.semilla)
 
-        if self.usar_kdtree:
-            self.busqueda_espacial = KDTreeIndices()
-        else:
+        if self.metodo_busqueda == 0:
             self.busqueda_espacial = ExhaustivaIndices()
+
+        elif self.metodo_busqueda == 1:
+            self.busqueda_espacial = KDTreeIndices()
+
+        elif self.metodo_busqueda == 2:
+            self.busqueda_espacial = QuadTreeIndices(
+                x_min=0.0,
+                x_max=self.config.Lx,
+                y_min=0.0,
+                y_max=self.config.Ly,
+                capacidad=8,
+                profundidad_maxima=15,
+            )
+
+        else:
+            raise ValueError(
+                "metodo_busqueda debe ser 0 (exhaustiva), "
+                "1 (KDTree) o 2 (QuadTree)."
+            )
         
         self.siguiente_id_punta = 0 # contador para asignar identificadores únicos a las puntas
         self.siguiente_id_rama = 0 # contador para asignar identificadores únicos a las ramas
@@ -55,7 +73,7 @@ class SimulacionBARW:
         self.siguiente_id_punta += 1
         self.siguiente_id_rama += 1
 
-        if self.usar_kdtree:
+        if self.metodo_busqueda == 1:
             self.busqueda_espacial.construir_kdtree()
         
     
@@ -231,7 +249,7 @@ class SimulacionBARW:
             self.busqueda_espacial.agregar_punto(x, y, id_rama)
 
         # 10. Reconstruir el KDTree solo una vez por paso temporal
-        if self.usar_kdtree:
+        if self.metodo_busqueda == 1:
             self.busqueda_espacial.construir_kdtree()
 
         # 11. Añadir las puntas nuevas
