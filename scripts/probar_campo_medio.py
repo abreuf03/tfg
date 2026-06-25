@@ -3,6 +3,8 @@ from pathlib import Path
 import sys
 from typing import Literal
 
+from scripts.pde_barw.pulso_reducido import gaussiana_inicial
+
 # Permite ejecutar el archivo directamente desde la carpeta scripts.
 RAIZ_PROYECTO = Path(__file__).resolve().parents[1]
 if str(RAIZ_PROYECTO) not in sys.path:
@@ -18,6 +20,7 @@ from src.campo_medio.metricas import (
     error_entre_mallas,
     orden_observado,
     resumen_funcional,
+    trayectoria_pico,
 )
 from src.campo_medio.solvers import resolver_euler_explicito, resolver_imex_cn
 from src.malla import Malla, crear_malla
@@ -451,20 +454,437 @@ def prueba_autorrefinamiento(config: CampoMedioConfig) -> pd.DataFrame:
     return tabla
 
 
+
+
+def ajustar_velocidad( tiempos: np.ndarray, posiciones: np.ndarray, t_inicio: float, t_fin: float, longitud: float,) -> dict[str, float]:
+   
+    mascara = (
+        np.isfinite(posiciones)
+        & (tiempos >= t_inicio)
+        & (tiempos <= t_fin)
+    )
+
+    if np.count_nonzero(mascara) < 3:
+        raise ValueError(
+            "No hay suficientes puntos válidos para ajustar la velocidad."
+        )
+
+    velocidad, ordenada = np.polyfit(
+        tiempos[mascara],
+        posiciones[mascara],
+        deg=1,
+    )
+
+    distancia_minima = float(
+        np.min(longitud - posiciones[mascara])
+    )
+
+    return {
+        "t_inicio": float(t_inicio),
+        "t_fin": float(t_fin),
+        "velocidad_numerica": float(velocidad),
+        "ordenada_ajuste": float(ordenada),
+        "n_puntos_ajuste": int(np.count_nonzero(mascara)),
+        "distancia_minima_frontera": distancia_minima,
+    }
+
+def margen_frontera_en_ventana(malla: Malla,A: np.ndarray,t_inicio: float,t_fin: float,umbral: float,) -> float:
+    
+    mascara_tiempo = (
+        (malla.t >= t_inicio)
+        & (malla.t <= t_fin)
+    )
+
+    perfiles = A[mascara_tiempo]
+
+    indices = np.flatnonzero(
+        np.any(perfiles > umbral, axis=0)
+    )
+
+    if indices.size == 0:
+        return float("nan")
+
+    x_derecha = float(malla.x[indices[-1]])
+    return float(malla.x[-1] - x_derecha)
+
+def simular_y_medir_velocidad(config: CampoMedioConfig,longitud: float,tiempo_final: float,dx: float,
+                              dt: float,ventanas: tuple[tuple[float, float], ...],umbral: float = 1.0e-6,) -> list[dict[str, float]]:
+    
+    malla = crear_malla_por_pasos(
+        longitud=longitud,
+        tiempo_final=tiempo_final,
+        dx=dx,
+        dt_maximo=dt,
+    )
+
+    # La condición inicial debe reconstruirse para cada malla.
+    a0 = gaussiana_inicial(
+        malla.x,
+        x0=8.0,
+        sigma=0.8,
+        A0=0.2,
+    )
+
+    a0[0] = 0.0
+    a0[-1] = 0.0
+
+    i0 = np.zeros_like(malla.x)
+
+    config_experimento = CampoMedioConfig(
+        D=config.D,
+        rb=config.rb,
+        re=config.re,
+        n0=config.n0,
+        a_in=0.0,
+        a_out=0.0,
+        a0=a0,
+        i0=i0,
+    )
+
+    A, I = resolver_imex_cn(malla, config_experimento)
+
+    if np.max(A) <= 1.0e-12:
+        raise RuntimeError(
+            "No se ha generado el pulso: max(A) es prácticamente cero."
+        )
+
+    # Mismo observable empleado en el experimento original.
+    posiciones = trayectoria_pico(malla.x, A)
+
+    filas: list[dict[str, float]] = []
+
+    for t_inicio, t_fin in ventanas:
+        if not (0.0 <= t_inicio < t_fin <= tiempo_final):
+            raise ValueError(
+                f"Ventana inválida [{t_inicio}, {t_fin}] para "
+                f"T={tiempo_final}."
+            )
+
+        ajuste = ajustar_velocidad(
+            tiempos=malla.t,
+            posiciones=posiciones,
+            t_inicio=t_inicio,
+            t_fin=t_fin,
+            longitud=longitud,
+        )
+
+        ajuste["distancia_minima_frontera"] = (
+            margen_frontera_en_ventana(
+                malla=malla,
+                A=A,
+                t_inicio=t_inicio,
+                t_fin=t_fin,
+                umbral=umbral,
+            )
+        )
+
+        filas.append(
+            {
+                "L": float(longitud),
+                "T": float(tiempo_final),
+                "dx": float(malla.dx),
+                "dt": float(malla.dt),
+                "lambda_difusivo": float(
+                    config.D * malla.dt / malla.dx**2
+                ),
+                "umbral_margen": float(umbral),
+                **ajuste,
+            }
+        )
+
+    print(
+        f"L={longitud:g}, dx={malla.dx:g}, dt={malla.dt:g}, "
+        f"max(A)={np.max(A):.4e}, "
+        f"x_max(T)={posiciones[-1]:.4f}"
+    )
+
+    del A, I, posiciones
+    gc.collect()
+
+    return filas
+
+def valores_unicos(referencia: float,valores: tuple[float, ...],) -> list[float]:
+    """Incluye la referencia y evita duplicados numéricos."""
+    salida: list[float] = []
+
+    for valor in (referencia, *valores):
+        if not any(np.isclose(valor, previo) for previo in salida):
+            salida.append(float(valor))
+
+    return salida
+
+def estudio_sensibilidad_velocidad(config: CampoMedioConfig,longitud_base: float,tiempo_final: float,
+                                   dx_base: float,dt_base: float,ventana_referencia: tuple[float, float],
+                                   pasos_espaciales: tuple[float, ...],pasos_temporales: tuple[float, ...],
+                                   longitudes: tuple[float, ...],ventanas: tuple[tuple[float, float], ...],
+                                   umbral: float = 1.0e-4,) -> pd.DataFrame:
+    
+    t0_ref, tf_ref = ventana_referencia
+
+    ventanas_completas = list(ventanas)
+    if not any(
+        np.isclose(t0, t0_ref) and np.isclose(tf, tf_ref)
+        for t0, tf in ventanas_completas
+    ):
+        ventanas_completas.append(ventana_referencia)
+
+    # Simulación base: se reutiliza para comparar ventanas.
+    filas_base = simular_y_medir_velocidad(
+        config=config,
+        longitud=longitud_base,
+        tiempo_final=tiempo_final,
+        dx=dx_base,
+        dt=dt_base,
+        ventanas=tuple(ventanas_completas),
+        umbral=umbral,
+    )
+
+    base_por_ventana = {
+        (fila["t_inicio"], fila["t_fin"]): fila
+        for fila in filas_base
+    }
+
+    referencia = base_por_ventana[(float(t0_ref), float(tf_ref))]
+    velocidad_referencia = float(referencia["velocidad_numerica"])
+
+    filas: list[dict[str, object]] = []
+
+    def agregar_fila(
+        factor: str,
+        valor: str,
+        fila_resultado: dict[str, float],
+    ) -> None:
+        fila = dict(fila_resultado)
+        fila["factor"] = factor
+        fila["valor_variado"] = valor
+        filas.append(fila)
+
+    # Sensibilidad a la malla espacial.
+    for dx in valores_unicos(dx_base, pasos_espaciales):
+        if np.isclose(dx, dx_base):
+            fila = referencia
+        else:
+            fila = simular_y_medir_velocidad(
+                config=config,
+                longitud=longitud_base,
+                tiempo_final=tiempo_final,
+                dx=dx,
+                dt=dt_base,
+                ventanas=(ventana_referencia,),
+                umbral=umbral,
+            )[0]
+
+        agregar_fila(
+            factor="Malla espacial",
+            valor=rf"$\Delta x={fila['dx']:.4g}$",
+            fila_resultado=fila,
+        )
+
+    # Sensibilidad al paso temporal.
+    for dt in valores_unicos(dt_base, pasos_temporales):
+        if np.isclose(dt, dt_base):
+            fila = referencia
+        else:
+            fila = simular_y_medir_velocidad(
+                config=config,
+                longitud=longitud_base,
+                tiempo_final=tiempo_final,
+                dx=dx_base,
+                dt=dt,
+                ventanas=(ventana_referencia,),
+                umbral=umbral,
+            )[0]
+
+        agregar_fila(
+            factor="Paso temporal",
+            valor=rf"$\Delta t={fila['dt']:.4g}$",
+            fila_resultado=fila,
+        )
+
+    # Sensibilidad al tamaño del dominio.
+    for longitud in valores_unicos(longitud_base, longitudes):
+        if np.isclose(longitud, longitud_base):
+            fila = referencia
+        else:
+            fila = simular_y_medir_velocidad(
+                config=config,
+                longitud=longitud,
+                tiempo_final=tiempo_final,
+                dx=dx_base,
+                dt=dt_base,
+                ventanas=(ventana_referencia,),
+                umbral=umbral,
+            )[0]
+
+        agregar_fila(
+            factor="Longitud del dominio",
+            valor=rf"$L={fila['L']:.4g}$",
+            fila_resultado=fila,
+        )
+
+    # Sensibilidad a la ventana de ajuste.
+    for t_inicio, t_fin in ventanas_completas:
+        fila = base_por_ventana[(float(t_inicio), float(t_fin))]
+
+        agregar_fila(
+            factor="Ventana de ajuste",
+            valor=rf"$[{t_inicio:.0f},{t_fin:.0f}]$",
+            fila_resultado=fila,
+        )
+
+    tabla = pd.DataFrame(filas)
+
+    velocidad_asintotica = 2.0 * np.sqrt(config.D * config.rb)
+
+    tabla["variacion_vs_referencia_pct"] = (
+        100.0
+        * (tabla["velocidad_numerica"] - velocidad_referencia)
+        / velocidad_referencia
+    )
+
+    tabla["error_vs_asintotica_pct"] = (
+        100.0
+        * np.abs(tabla["velocidad_numerica"] - velocidad_asintotica)
+        / velocidad_asintotica
+    )
+
+    orden_factores = {
+        "Malla espacial": 0,
+        "Paso temporal": 1,
+        "Longitud del dominio": 2,
+        "Ventana de ajuste": 3,
+    }
+
+    tabla["_orden"] = tabla["factor"].map(orden_factores)
+
+    tabla = (
+        tabla.sort_values(["_orden", "dx", "dt", "L", "t_inicio"])
+        .drop(columns="_orden")
+        .reset_index(drop=True)
+    )
+
+    tabla.to_csv(
+        RESULTADOS / "sensibilidad_velocidad.csv",
+        index=False,
+    )
+
+    tabla_memoria = tabla[
+        [
+            "factor",
+            "valor_variado",
+            "velocidad_numerica",
+            "variacion_vs_referencia_pct",
+            "distancia_minima_frontera",
+        ]
+    ].rename(
+        columns={
+            "factor": "Factor",
+            "valor_variado": "Valor",
+            "velocidad_numerica": r"$V_{\mathrm{num}}$",
+            "variacion_vs_referencia_pct": r"$\Delta V$ (\%)",
+            "distancia_minima_frontera": r"Margen a frontera",
+        }
+    )
+
+    
+
+    print("\n=== SENSIBILIDAD DE LA VELOCIDAD ===")
+    print(tabla_memoria.to_string(index=False))
+
+    print(
+        "\nVelocidad asintótica de referencia: "
+        f"v*=2 sqrt(D rb)={velocidad_asintotica:.6f}"
+    )
+
+    print(
+        "\nArchivos creados:\n"
+        f" - {RESULTADOS / 'sensibilidad_velocidad.csv'}\n"
+        
+    )
+
+    return tabla
+
+
 def main() -> None:
+    # ------------------------------------------------------------
+    # Configuración base: misma que el experimento del pulso
+    # ------------------------------------------------------------
+    L_BASE = 280.0
+    T_BASE = 300.0
+    DX_BASE = 0.2
+    DT_BASE = 0.02
+
+    # Este umbral NO se usa para calcular la velocidad.
+    # Solo sirve para comprobar que el perfil activo no alcanza
+    # la frontera derecha.
+    UMBRAL_MARGEN = 1.0e-6
+
+    
     config = CampoMedioConfig(
         D=1.0,
         rb=0.1,
         re=1.0,
         n0=1.0,
-        a_in=1.0,
+        a_in=0.0,
         a_out=0.0,
         a0=0.0,
         i0=0.0,
     )
 
-    prueba_funcional_comparacion_y_balance(config)
-    prueba_autorrefinamiento(config)
+    
+    tabla = estudio_sensibilidad_velocidad(
+        config=config,
+        longitud_base=L_BASE,
+        tiempo_final=T_BASE,
+        dx_base=DX_BASE,
+        dt_base=DT_BASE,
+        ventana_referencia=(200.0, 300.0),
+
+        
+        pasos_espaciales=(
+            0.4,
+            0.2,
+            0.1,
+        ),
+
+        
+        pasos_temporales=(
+            0.04,
+            0.02,
+            0.015,
+        ),
+
+        
+        longitudes=(
+            240.0,
+            280.0,
+            320.0,
+        ),
+
+        
+        ventanas=(
+            (160.0, 300.0),
+            (180.0, 300.0),
+            (200.0, 300.0),
+            (220.0, 300.0),
+        ),
+
+        umbral=UMBRAL_MARGEN,
+    )
+
+    print("\nTabla final de sensibilidad:")
+    print(
+        tabla[
+            [
+                "factor",
+                "valor_variado",
+                "velocidad_numerica",
+                "variacion_vs_referencia_pct",
+                "distancia_minima_frontera",
+            ]
+        ].to_string(index=False)
+    )
+
     print(f"\nResultados guardados en: {RESULTADOS.resolve()}")
 
 
