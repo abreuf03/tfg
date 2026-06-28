@@ -13,8 +13,9 @@ class ExhaustivaIndices:
     def __init__(self):
         self.puntos = []
         self.ramas_ids = []
+        self.pasos = []
 
-    def agregar_punto(self, x,y, id_rama):
+    def agregar_punto(self, x,y, id_rama, paso):
         """
         Añade un punto de la red ya depositada.
 
@@ -25,6 +26,7 @@ class ExhaustivaIndices:
         """
         self.puntos.append((x, y))
         self.ramas_ids.append(id_rama)
+        self.pasos.append(paso)
     
     def buscar_puntas_cercanas(self, x, y, Ra, excluir_id_rama=None):
         """
@@ -44,8 +46,10 @@ class ExhaustivaIndices:
         """
         cercanas = []
         for i, (px, py) in enumerate(self.puntos):
-            if excluir_id_rama is not None and self.ramas_ids[i] == excluir_id_rama: #si no se añade casi todas las ramas se aniquiliarían por estar cercanas a su propia rama
-                continue
+            #esta lógica ignora la rama completa, buscamos implementar exclusión local
+            #devolvemos simplemente los vecinos cercanos y en otra función en el simulador estudiamos si se tienen en cuenta o no para la terminación
+            #if excluir_id_rama is not None and self.ramas_ids[i] == excluir_id_rama: #si no se añade casi todas las ramas se aniquiliarían por estar cercanas a su propia rama
+            #    continue
             distancia_2 = ((px - x) ** 2 + (py - y) ** 2)
             if distancia_2 <= Ra ** 2:
                 cercanas.append(i)
@@ -102,8 +106,8 @@ class KDTreeIndices:
         if self.kdtree is None:
             return []
         indices = self.kdtree.query_ball_point((x, y), Ra)
-        if excluir_id_rama is not None:
-            indices = [i for i in indices if self.ramas_ids[i] != excluir_id_rama]
+        #if excluir_id_rama is not None:
+        #    indices = [i for i in indices if self.ramas_ids[i] != excluir_id_rama]
         return indices
     
 @dataclass
@@ -117,6 +121,7 @@ class QuadTreeNode:
     capacidad: int = 4  # Capacidad máxima de puntos por nodo antes de subdividir
     max_profundidad: int = 10  # Profundidad máxima del QuadTree
     profundidad: int = 0  # Profundidad actual del nodo
+
 
 
     def contiene(self, x, y) -> bool: 
@@ -185,9 +190,10 @@ class QuadTreeIndices:
 
         self.puntos: list[tuple[float, float]] = []
         self.ramas_ids: list[int] = []
+        self.pasos: list[int] = []
 
 
-    def agregar_punto(self, x, y, id_rama: int):
+    def agregar_punto(self, x, y, id_rama: int, paso):
         """
         Añade un punto de la red ya depositada.
 
@@ -202,6 +208,7 @@ class QuadTreeIndices:
         indice = len(self.puntos)
         self.puntos.append((x, y))
         self.ramas_ids.append(id_rama)
+        self.pasos.append(paso)
         self._insertar(self.root, indice)
 
     def _insertar(self, nodo: QuadTreeNode, indice: int):
@@ -361,8 +368,8 @@ class QuadTreeIndices:
         cercanas = []
 
         for i in candidatos:
-            if excluir_id_rama is not None and self.ramas_ids[i] == excluir_id_rama:
-                continue
+            #if excluir_id_rama is not None and self.ramas_ids[i] == excluir_id_rama:
+            #    continue
             px, py = self.puntos[i]
             distancia2 = (px - x) ** 2 + (py - y) ** 2
             if distancia2 <= radio2:
