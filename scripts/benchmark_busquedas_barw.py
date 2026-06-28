@@ -17,14 +17,14 @@ from src.barw.graficas import (
 )
 
 
-def ejecutar_simulacion(config, usar_kdtree):
+def ejecutar_simulacion(config, metodo):
     """
     Ejecuta una simulación BARW y mide el tiempo de ejecución.
     """
 
     simulacion = SimulacionBARW(
         config=config,
-        usar_kdtree=usar_kdtree
+        metodo_busqueda=metodo
     )
 
     inicio = time.perf_counter()
@@ -53,6 +53,10 @@ def ejecutar_simulacion(config, usar_kdtree):
         "puntas_activas_finales": historial["num_puntas_activas"][-1],
         "tiempo_final": historial["tiempo"][-1],
         "x_max": x_max,
+        "colisiones": simulacion.contador_colisiones,
+        "salidas_frontera": simulacion.contador_salidas,
+        "motivo_parada": resultado["motivo_parada"],
+        "pasos_ejecutados": resultado["pasos_ejecutados"],
     }
 
 
@@ -62,18 +66,40 @@ def ejecutar_benchmark(num_semillas=50):
     para varias semillas aleatorias.
     """
 
-    config_base = BARWConfig()
+    config_base = BARWConfig(
+        Lx=280,
+        Ly=150,
+        pb=0.1,
+        Ra=3.0,
+        long_paso=1.0,
+        tiempo_paso=1.0,
+        tiempo_total=1000,
+        ang_amplitud=np.pi / 10,
+        angulo_bifurcacion=np.pi / 6,
+        pasos_exclusion_propia=6,
+        pasos_exclusion_aniquilacion=10,
+        modo_colision="punto_punto",
+        max_puntas=100_000,
+        max_pasos=1_000_000,
+    )
     resultados = []
 
     for semilla in range(1, num_semillas + 1):
         print(f"Ejecutando semilla {semilla}/{num_semillas}...")
 
-        for usar_kdtree, metodo in [(False, "exhaustiva"), (True, "cKDTree")]:
+        metodos = [
+            (0, "exhaustiva"),
+            (1, "KDTree"),
+            (2, "QuadTree"),
+        ]
+
+        for metodo_busqueda, metodo in metodos:
+
             config = replace(config_base, semilla=semilla)
 
             metricas = ejecutar_simulacion(
                 config=config,
-                usar_kdtree=usar_kdtree
+                metodo=metodo_busqueda
             )
 
             metricas["semilla"] = semilla
@@ -123,35 +149,63 @@ def resumen_por_metodo(df):
             "ic95_sup": ic_sup,
             "segmentos_medios": grupo["segmentos"].mean(),
             "x_max_medio": grupo["x_max"].mean(),
-            "num_simulaciones": len(grupo)
+            "num_simulaciones": len(grupo),
+
         })
 
     return pd.DataFrame(filas)
 
 
+
 def comprobar_equivalencia(df):
     """
-    Comprueba si ambas búsquedas generan las mismas métricas para cada semilla.
+    Compara KDTree y QuadTree frente a la búsqueda exhaustiva
+    para cada semilla.
     """
+
+    metricas_numericas = [
+        "segmentos",
+        "bifurcaciones",
+        "terminaciones",
+        "colisiones",
+        "salidas_frontera",
+        "puntas_activas_finales",
+        "tiempo_final",
+        "x_max",
+        "pasos_ejecutados",
+    ]
 
     diferencias = []
 
     for semilla, grupo in df.groupby("semilla"):
-        if len(grupo) != 2:
-            continue
+        fila_exhaustiva = grupo[
+            grupo["metodo"] == "exhaustiva"
+        ].iloc[0]
 
-        fila_exh = grupo[grupo["metodo"] == "exhaustiva"].iloc[0]
-        fila_kdt = grupo[grupo["metodo"] == "cKDTree"].iloc[0]
+        for metodo in ("KDTree", "QuadTree"):
+            fila_metodo = grupo[
+                grupo["metodo"] == metodo
+            ].iloc[0]
 
-        diferencias.append({
-            "semilla": semilla,
-            "dif_segmentos": fila_kdt["segmentos"] - fila_exh["segmentos"],
-            "dif_bifurcaciones": fila_kdt["bifurcaciones"] - fila_exh["bifurcaciones"],
-            "dif_terminaciones": fila_kdt["terminaciones"] - fila_exh["terminaciones"],
-            "dif_x_max": fila_kdt["x_max"] - fila_exh["x_max"],
-        })
+            fila = {
+                "semilla": semilla,
+                "metodo": metodo,
+                "motivo_parada_igual": (
+                    fila_metodo["motivo_parada"]
+                    == fila_exhaustiva["motivo_parada"]
+                ),
+            }
+
+            for metrica in metricas_numericas:
+                fila[f"dif_{metrica}"] = (
+                    fila_metodo[metrica]
+                    - fila_exhaustiva[metrica]
+                )
+
+            diferencias.append(fila)
 
     return pd.DataFrame(diferencias)
+
 
 
 def main():
@@ -173,8 +227,26 @@ def main():
     print("\nDiferencias entre métodos por semilla:")
     print(diferencias)
 
-    print("\nMáximas diferencias absolutas:")
-    print(diferencias.drop(columns=["semilla"]).abs().max())
+    print("\nMáximas diferencias absolutas respecto a Exhaustiva:")
+
+    columnas_numericas = [
+        columna
+        for columna in diferencias.columns
+        if columna.startswith("dif_")
+    ]
+
+    print(
+        diferencias.groupby("metodo")[columnas_numericas]
+        .agg(lambda columna: columna.abs().max())
+    )
+
+    print("\n¿Coincide el motivo de parada?")
+    print(
+        diferencias.groupby("metodo")["motivo_parada_igual"]
+        .all()
+    )
+
+
 
     df.to_csv("resultados/benchmark_busquedas_barw.csv", index=False)
     resumen.to_csv("resultados/resumen_benchmark_busquedas_barw.csv", index=False)

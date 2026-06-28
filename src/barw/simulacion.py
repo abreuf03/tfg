@@ -42,12 +42,15 @@ class SimulacionBARW:
                 "1 (KDTree) o 2 (QuadTree)."
             )
         
+        if self.config.modo_colision not in { "punto_punto", "punto_segmento", }: 
+            raise ValueError( "modo_colision debe ser 'punto_punto' o 'punto_segmento'." )
+        
         self.siguiente_id_punta = 0 # contador para asignar identificadores únicos a las puntas
         self.siguiente_id_rama = 0 # contador para asignar identificadores únicos a las ramas
 
         self.contador_pasos = 0 # contador de pasos de la simulación
         self.contador_bifurcaciones = 0 # contador de bifurcaciones realizadas
-        self.contador_terminaciones = 0 # contador de terminaciones por aniquilación
+        self.contador_terminaciones = 0 # contador de terminaciones totales
         self.contador_colisiones = 0 #terminaciones por colisión
         self.contador_salidas = 0 #terminacios por salida de dominio
 
@@ -190,17 +193,16 @@ class SimulacionBARW:
 
         return np.linalg.norm(p - proyeccion)
     
-    def exclusion_local(self, punta:Punta, candidato:int, paso_actual:int)->bool:
+    def exclusion_local(self, punta:Punta, id_rama_candidato : int, pasos_acumulados:int, paso_actual:int)->bool:
         #criterio de colision:
         #candidato de mi misma rama ->ignoro solo si es reciente
         #candidato madre/hija -> ignoro durante el periodo de exclusion de bifurcacion
         #candidato de otra rama -> terminacion
 
-        id_rama_candidato = self.busqueda_espacial.ramas_ids[candidato]
-        num_paso = self.busqueda_espacial.pasos[candidato]
+        
 
         if id_rama_candidato==punta.id_rama:
-            return (paso_actual-num_paso <= self.config.pasos_exclusion_propia)
+            return (paso_actual-pasos_acumulados <= self.config.pasos_exclusion_propia)
         
 
         madre_hija = (self.rama_padre.get(punta.id_rama) == id_rama_candidato) or (
@@ -220,7 +222,7 @@ class SimulacionBARW:
             #pero si que deberiamos permitir colisiones con conductos mas antiguos de la madre
             #es decir, solo queremos evitar los pasos cercanos a la bifurcacion, entonces:
            
-            cercano_a_bifrucacion = (num_paso >= 
+            cercano_a_bifrucacion = (pasos_acumulados >= 
                                      paso_bifurcacion - self.config.pasos_exclusion_propia)
 
             return periodo_exclusion and cercano_a_bifrucacion
@@ -228,21 +230,43 @@ class SimulacionBARW:
             return False
 
     
-    def colision_admisible(self, punta:Punta, cercanas:list[int], paso_actual:int)->bool:
 
-        for indice in cercanas : 
-            if not self.exclusion_local(punta,indice,paso_actual):
-                return True
-            
-        return False
-
+    def hay_colision_punto_punto( self, punta: Punta, x_nueva: float, y_nueva: float, paso_actual: int, ) -> bool: 
+        
+        indices_cercanos = self.busqueda_espacial.buscar_puntas_cercanas( x_nueva, y_nueva, self.config.Ra, ) 
+        
+        for indice in indices_cercanos: 
+            id_rama_candidata = self.busqueda_espacial.ramas_ids[indice] 
+            paso = self.busqueda_espacial.pasos[indice] 
+            if not self.exclusion_local( punta, id_rama_candidata,paso,paso_actual): 
+                return True 
+        
+        return False 
     
+    def hay_colision_punto_segmento( self, punta: Punta, x_nueva: float, y_nueva: float, paso_actual: int, ) -> bool: 
+       
+        for segmento in self.conducto: 
+           ( x0, y0, x1, y1, id_rama_candidata, paso_deposito, ) = segmento 
+           if self.exclusion_local( punta, id_rama_candidata, paso_deposito, paso_actual, ): 
+               continue 
+           distancia = self.distancia_punto_segmento( x_nueva, y_nueva, x0, y0, x1, y1, ) 
+           if distancia <= self.config.Ra: 
+               return True 
+        
+        return False 
+    
+    def hay_colision( self, punta: Punta, x_nueva: float, y_nueva: float, paso_actual: int, ) -> bool: 
+        if self.config.modo_colision == "punto_punto": 
+            return self.hay_colision_punto_punto( punta, x_nueva, y_nueva, paso_actual, ) 
+        return self.hay_colision_punto_segmento( punta, x_nueva, y_nueva, paso_actual, )
+
     def paso(self):
         """
         Ejecuta un paso temporal de la simulación.
         """
         nuevas_puntas = []
         puntos_nuevos = []
+        segmentos_nuevos = []
         
         paso_actual = self.contador_pasos +1
 
@@ -262,16 +286,11 @@ class SimulacionBARW:
                 punta.x = x_anterior
                 punta.y = y_anterior
                 continue
-
-            # 3. Buscar aniquilación contra la red ya existente
-            puntas_cercanas = self.busqueda_espacial.buscar_puntas_cercanas(x_nueva,y_nueva,self.config.Ra)
             
-
-            # 6. Actualizar edad
-            punta.edad += 1
-
-            # 7. Si había colisión, la punta termina
-            if self.colision_admisible(punta,puntas_cercanas,paso_actual):
+            #comprobamos si hay colision frente a la red ya existente
+            hay_colision = self.hay_colision(punta,x_nueva,y_nueva,paso_actual)
+            
+            if hay_colision:
                 punta.activa = False
                 self.contador_terminaciones += 1
                 self.contador_colisiones+=1
@@ -279,26 +298,29 @@ class SimulacionBARW:
                 punta.y = y_anterior
                 continue
             
+
+            # se acepta el movimiento
+            punta.edad += 1
+
+
                         
             # 5. Guardar el punto para añadirlo después al índice espacial
             puntos_nuevos.append((x_nueva, y_nueva, punta.id_rama,paso_actual))
+                        # 4. Guardar el segmento generado
+            segmentos_nuevos.append(
+                (x_anterior, y_anterior, x_nueva, y_nueva, punta.id_rama, paso_actual)
+            )
 
-            # 8. Bifurcación estocástica
+            # Bifurcación estocástica
             if self.rng.random() < self.config.pb:
                 nueva_punta = self.crear_bifurcacion(punta,paso=paso_actual)
                 nuevas_puntas.append(nueva_punta)
                 self.contador_bifurcaciones += 1
                 
-            
-            # 4. Guardar el segmento generado
-            self.conducto.append(
-                (x_anterior, y_anterior, x_nueva, y_nueva, punta.id_rama)
-            )
+           
 
 
-
-
-
+        self.conducto.extend(segmentos_nuevos)
         # 9. Añadir todos los puntos nuevos al índice espacial
         for x, y, id_rama, paso in puntos_nuevos:
             self.busqueda_espacial.agregar_punto(x, y, id_rama,paso)
@@ -321,6 +343,8 @@ class SimulacionBARW:
         Un diccionario con el historial de la simulación, incluyendo el tiempo, número de puntas activas, número de bifurcaciones, número de terminaciones y número total de puntas en cada paso.
         """
         self.inicializar()
+
+        motivo_parada = None
 
         historial={
             "tiempo": [],
@@ -363,6 +387,7 @@ class SimulacionBARW:
 
             if puntas_activas == 0:
                 print(f"Simulación terminada en el paso {paso+1} (tiempo={tiempo:.2f}) - No quedan puntas activas.")
+                motivo_parada = "extincion"
                 break
 
             
@@ -372,15 +397,24 @@ class SimulacionBARW:
                     f"Simulación terminada en el paso {paso+1} "
                     f"(tiempo={tiempo:.2f}) - Se alcanzó el máximo de puntas."
                 )
+                motivo_parada = "max_puntas"
                 break
 
         #print("Colisiones solo por segmentos:", self.colisiones_segmento)
         #print("Colisiones solo por puntos:", self.colisiones_puntos)
         #print("Colisiones por ambas:", self.colisiones_ambas)
 
+        if motivo_parada is None: 
+            if num_pasos == self.config.max_pasos: 
+                motivo_parada = "max_pasos" 
+            else: 
+                motivo_parada = "tiempo_total"
+
         return {
             "historial": historial,
             "conducto": self.conducto,
             "puntas": self.puntas,
-            "config": self.config
+            "config": self.config,
+            "motivo_parada": motivo_parada, 
+            "pasos_ejecutados": self.contador_pasos,
         }
