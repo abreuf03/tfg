@@ -381,7 +381,8 @@ def barw_profile_from_state(sim: SimulacionBARW, cfg: BARWEnsembleConfig, time: 
 
     duct_x: list[float] = []
     duct_w: list[float] = []
-    for x0, y0, x1, y1, _id_rama in sim.conducto:
+  
+    for x0, y0, x1, y1, _id_rama, *_ in sim.conducto:
         duct_x.append(0.5 * (x0 + x1))
         duct_w.append(math.hypot(x1 - x0, y1 - y0))
     if duct_x:

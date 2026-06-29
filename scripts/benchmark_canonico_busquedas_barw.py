@@ -93,6 +93,7 @@ def ejecutar_benchmark(num_semillas=50):
             (2, "QuadTree"),
         ]
 
+
         for metodo_busqueda, metodo in metodos:
 
             config = replace(config_base, semilla=semilla)

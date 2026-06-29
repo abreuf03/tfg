@@ -253,19 +253,24 @@ def ejecutar_barw_comparacion(cfg:BARWEnsembleConfig,) -> dict[str, object]:
     max_steps = int(round(cfg.total_time / cfg.step_time))
 
     for seed in cfg.seeds:
-        barw_cfg = BARWConfig(
-            Lx=cfg.Lx,
-            Ly=cfg.Ly,
-            pb=cfg.rb,
-            Ra=cfg.Ra,
-            long_paso=cfg.step_length,
-            tiempo_paso=cfg.step_time,
-            tiempo_total=cfg.total_time,
-            semilla=int(seed),
-            max_puntas=100000,
-            max_pasos=max_steps,
-        )
-        sim = SimulacionBARW(barw_cfg, usar_kdtree=True)
+        barw_cfg = BARWConfig( 
+            Lx=cfg.Lx, 
+            Ly=cfg.Ly, 
+            pb=cfg.rb, 
+            Ra=cfg.Ra, 
+            long_paso=cfg.step_length, 
+            tiempo_paso=cfg.step_time, 
+            tiempo_total=cfg.total_time, 
+            ang_amplitud=np.pi / 10, 
+            angulo_bifurcacion=np.pi / 6, 
+            pasos_exclusion_propia=6, 
+            pasos_exclusion_aniquilacion=10, 
+            modo_colision="punto_punto", 
+            semilla=int(seed), 
+            max_puntas=100_000, 
+            max_pasos=max_steps, )
+        
+        sim = SimulacionBARW(barw_cfg, metodo_busqueda=1)
         sim.inicializar()
         active = sum(p.activa for p in sim.puntas)
         extinction_time = math.nan
@@ -302,7 +307,16 @@ def ejecutar_barw_comparacion(cfg:BARWEnsembleConfig,) -> dict[str, object]:
                     extinction_time = float((step + 1) * cfg.step_time)
 
         if seed == cfg.seeds[0]:
-            for idx, (x0, y0, x1, y1, id_rama) in enumerate(sim.conducto):
+            
+            for idx, segmento in enumerate(sim.conducto):
+                x0, y0, x1, y1, id_rama, *resto = segmento
+
+                paso_deposito = (
+                    int(resto[0])
+                    if resto
+                    else np.nan
+                )
+
                 final_segments.append(
                     {
                         "segment_id": idx,
@@ -312,8 +326,10 @@ def ejecutar_barw_comparacion(cfg:BARWEnsembleConfig,) -> dict[str, object]:
                         "x1": float(x1),
                         "y1": float(y1),
                         "branch_id": int(id_rama),
+                        "deposit_step": paso_deposito,
                     }
                 )
+
             for p in sim.puntas:
                 final_tips.append(
                     {

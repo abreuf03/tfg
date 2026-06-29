@@ -7,7 +7,7 @@ def main():
     config = BARWConfig()
 
     #kdtree = True # Cambia a False para usar búsqueda exhaustiva
-    metodo =2
+    metodo =1
     simulacion = SimulacionBARW(config=config, metodo_busqueda=metodo)
     resultado = simulacion.ejecutar()
 

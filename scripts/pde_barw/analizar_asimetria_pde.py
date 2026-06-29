@@ -731,6 +731,36 @@ def main() -> None:
         ),
     )
 
+    # Tabla reducida para el análisis de sensibilidad de la memoria.  
+    casos_sensibilidad = ( ("Tiempo", "t=200", 200.0, 0.02, 0.25), 
+                          ("Tiempo", "t=250", 250.0, 0.02, 0.25), 
+                          ("Tiempo", "t=300", 300.0, 0.02, 0.25), 
+                          ("Banda de ajuste", "[0.02, 0.20]", 300.0, 0.02, 0.20), 
+                          ("Banda de ajuste", "[0.05, 0.30]", 300.0, 0.05, 0.30), ) 
+    
+    filas_sensibilidad = [] 
+    for factor, caso, tiempo_objetivo, fraccion_min, fraccion_max in casos_sensibilidad: 
+        mascara = ( np.isclose(tabla["t"], tiempo_objetivo) & np.isclose(tabla["fraccion_min"], 
+                    fraccion_min) & np.isclose(tabla["fraccion_max"], fraccion_max) ) 
+        fila = tabla.loc[mascara].copy() 
+        if len(fila) != 1: 
+            raise RuntimeError( "No se encontró una fila única para el caso de sensibilidad: " f"{factor}, {caso}." ) 
+       
+        fila.insert(0, "caso", caso) 
+        fila.insert(0, "factor", factor) 
+        filas_sensibilidad.append(fila) 
+        
+        tabla_sensibilidad = pd.concat( filas_sensibilidad, ignore_index=True, ) 
+        
+        columnas_sensibilidad = [ "factor", "caso", "gamma_menos", "gamma_mas", "cociente", 
+                                 "cociente_teorico", "error_porcentual", "r2_menos", "r2_mas", "n_menos", 
+                                 "n_mas", ] 
+        
+        tabla_sensibilidad.to_csv( RESULTADOS / "asimetria_pulso_sensibilidad.csv", index=False, ) 
+        
+        print("\nTabla de sensibilidad de la asimetría:") 
+        print( tabla_sensibilidad[ columnas_sensibilidad ].to_string(index=False) )
+
 
 
 if __name__ == "__main__":

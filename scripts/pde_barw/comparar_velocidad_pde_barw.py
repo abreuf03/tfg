@@ -32,6 +32,68 @@ ARCHIVO_PDE = ( RAIZ_PROYECTO / "resultados" / "campo_medio_cap4" / "solucion_pu
 FIGURAS = RESULTADOS / "figuras" 
 FIGURAS.mkdir(parents=True, exist_ok=True)
 
+ARCHIVO_HISTORIAL_BARW = ( RESULTADOS / "barw_historial.csv" ) 
+ARCHIVO_RESUMEN_SEMILLAS = ( RESULTADOS / "barw_resumen_semillas.csv" )
+
+
+def serie_a_bool(serie: pd.Series) -> pd.Series: 
+    """Convierte una columna CSV con valores booleanos a bool.""" 
+    return ( 
+        serie.astype(str) 
+        .str.strip() 
+        .str.lower() 
+        .isin({"true", "1", "yes", "si", "sí"}) 
+    ) 
+
+def ajustar_velocidad_lineal( tiempos: np.ndarray, posiciones: np.ndarray, *, t_min: float, t_max: float, 
+                             x_min: float, x_max: float, ) -> dict[str, float]: 
+    """Ajuste lineal de una trayectoria dentro de una ventana fija.""" 
+    mascara = ( np.isfinite(tiempos) & np.isfinite(posiciones) & (tiempos >= t_min) & 
+               (tiempos <= t_max) & (posiciones > x_min) & (posiciones < x_max) ) 
+    
+    if int(np.sum(mascara)) < 3: 
+        raise ValueError( "No hay suficientes puntos para ajustar la velocidad." ) 
+    
+    tiempos_ajuste = tiempos[mascara] 
+    posiciones_ajuste = posiciones[mascara] 
+    velocidad, ordenada = np.polyfit( tiempos_ajuste, posiciones_ajuste, deg=1, ) 
+    prediccion = velocidad * tiempos_ajuste + ordenada 
+    residuos = posiciones_ajuste - prediccion 
+    suma_cuadrados_total = np.sum( (posiciones_ajuste - np.mean(posiciones_ajuste)) ** 2 ) 
+    r2 = ( 1.0 - np.sum(residuos**2) / suma_cuadrados_total if suma_cuadrados_total > 0.0 else np.nan ) 
+    
+    return { "speed": float(velocidad), 
+            "intercept": float(ordenada), 
+            "r2": float(r2), 
+            "n": int(tiempos_ajuste.size), 
+    } 
+
+def bootstrap_velocidad_cohorte( historial_cohorte: pd.DataFrame, semillas_cohorte: np.ndarray, *, 
+                                t_min: float, t_max: float, x_min: float, x_max: float, 
+                                n_bootstrap: int = 2000, semilla_bootstrap: int = 2026, ) -> tuple[float, float]: 
+    """IC bootstrap por semillas para la velocidad media de la cohorte.""" 
+    matriz = ( historial_cohorte .pivot(index="time", columns="seed", values="x_front") 
+              .sort_index() .reindex(columns=semillas_cohorte) ) 
+    
+    if matriz.isna().any().any(): 
+        raise ValueError( "Faltan valores de frente para alguna semilla de la cohorte." ) 
+    
+    tiempos = matriz.index.to_numpy(dtype=float) 
+    valores = matriz.to_numpy(dtype=float) 
+    rng = np.random.default_rng(semilla_bootstrap) 
+    velocidades = np.empty(n_bootstrap, dtype=float) 
+    
+    for replica in range(n_bootstrap): 
+        indices = rng.integers( low=0, high=valores.shape[1], size=valores.shape[1], ) 
+        frente_medio = valores[:, indices].mean(axis=1) 
+        ajuste = ajustar_velocidad_lineal( tiempos, frente_medio, t_min=t_min, t_max=t_max, 
+                                          x_min=x_min, x_max=x_max, ) 
+        velocidades[replica] = ajuste["speed"] 
+    
+    ic_inf, ic_sup = np.quantile( velocidades, [0.025, 0.975], ) 
+        
+    return float(ic_inf), float(ic_sup)
+
 
 def main() -> None:
     archivo_frente_barw = (
@@ -50,6 +112,9 @@ def main() -> None:
         / "campo_medio_cap4"
         / "solucion_pulso_campo_medio.npz"
     )
+
+    archivo_historial_barw = RESULTADOS / "barw_historial.csv"
+    archivo_resumen_semillas = RESULTADOS / "barw_resumen_semillas.csv"
 
     figuras = RESULTADOS / "figuras"
     figuras.mkdir(
@@ -88,6 +153,91 @@ def main() -> None:
     peak_stats = pd.read_csv(
         archivo_pico_barw
     )
+
+
+    historial_barw = pd.read_csv(
+        archivo_historial_barw
+    )
+
+    resumen_semillas = pd.read_csv(
+        archivo_resumen_semillas
+    )
+
+    columnas_historial = {
+        "seed",
+        "time",
+        "x_front",
+        "alive",
+    }
+
+    columnas_resumen = {
+        "seed",
+        "survived_to_T",
+    }
+
+    if not columnas_historial.issubset(historial_barw.columns):
+        raise ValueError(
+            "Faltan columnas en barw_historial.csv."
+        )
+
+    if not columnas_resumen.issubset(resumen_semillas.columns):
+        raise ValueError(
+            "Faltan columnas en barw_resumen_semillas.csv."
+        )
+
+    mascara_supervivientes_finales = serie_a_bool(
+        resumen_semillas["survived_to_T"]
+    )
+
+    semillas_cohorte = (
+        resumen_semillas.loc[
+            mascara_supervivientes_finales,
+            "seed",
+        ]
+        .to_numpy(dtype=int)
+    )
+
+    if semillas_cohorte.size < 2:
+        raise ValueError(
+            "La cohorte fija debe contener al menos dos semillas."
+        )
+
+    historial_cohorte = historial_barw[
+        historial_barw["seed"].isin(semillas_cohorte)
+    ].copy()
+
+    frente_cohorte = (
+        historial_cohorte
+        .groupby("time", as_index=False)
+        .agg(
+            front_mean_fixed=("x_front", "mean"),
+            front_std_fixed=("x_front", "std"),
+            n_fixed=("x_front", "count"),
+        )
+    )
+
+    frente_cohorte["front_std_fixed"] = (
+        frente_cohorte["front_std_fixed"].fillna(0.0)
+    )
+
+    frente_cohorte["front_sem_fixed"] = (
+        frente_cohorte["front_std_fixed"]
+        / np.sqrt(frente_cohorte["n_fixed"])
+    )
+
+    if not np.all(
+        frente_cohorte["n_fixed"].to_numpy(dtype=int)
+        == semillas_cohorte.size
+    ):
+        raise RuntimeError(
+            "La cohorte fija no tiene datos para todos los tiempos."
+        )
+
+    print(
+        "Cohorte fija de supervivientes hasta T=300: "
+        f"{semillas_cohorte.size} semillas."
+    )
+
 
     columnas_frente = {
         "time",
@@ -545,6 +695,89 @@ def main() -> None:
         / "comparacion_velocidades_barw_pde.csv",
         index=False,
     )
+
+
+    ventana_cohorte_fija = (
+        150.0,
+        300.0,
+    )
+
+    tiempos_cohorte = frente_cohorte[
+        "time"
+    ].to_numpy(dtype=float)
+
+    frente_medio_cohorte = frente_cohorte[
+        "front_mean_fixed"
+    ].to_numpy(dtype=float)
+
+    ajuste_cohorte_fija = ajustar_velocidad_lineal(
+        tiempos_cohorte,
+        frente_medio_cohorte,
+        t_min=ventana_cohorte_fija[0],
+        t_max=ventana_cohorte_fija[1],
+        x_min=10.0,
+        x_max=limite_espacial,
+    )
+
+    ic95_inf, ic95_sup = bootstrap_velocidad_cohorte(
+        historial_cohorte,
+        semillas_cohorte,
+        t_min=ventana_cohorte_fija[0],
+        t_max=ventana_cohorte_fija[1],
+        x_min=10.0,
+        x_max=limite_espacial,
+    )
+
+    ajuste_pde_cohorte = ajustar_velocidad_lineal(
+        tiempos_frente_pde,
+        frente_pde,
+        t_min=ventana_cohorte_fija[0],
+        t_max=ventana_cohorte_fija[1],
+        x_min=10.0,
+        x_max=limite_espacial,
+    )
+
+    error_relativo_cohorte = (
+        abs(
+            ajuste_pde_cohorte["speed"]
+            - ajuste_cohorte_fija["speed"]
+        )
+        / abs(ajuste_cohorte_fija["speed"])
+    )
+
+    tabla_cohorte_fija = pd.DataFrame(
+        [
+            {
+                "cohorte": "supervivientes_hasta_T300",
+                "n_semillas": int(semillas_cohorte.size),
+                "t_min": ventana_cohorte_fija[0],
+                "t_max": ventana_cohorte_fija[1],
+                "velocidad_barw": ajuste_cohorte_fija["speed"],
+                "ic95_bootstrap_inf": ic95_inf,
+                "ic95_bootstrap_sup": ic95_sup,
+                "r2_barw": ajuste_cohorte_fija["r2"],
+                "velocidad_pde": ajuste_pde_cohorte["speed"],
+                "r2_pde": ajuste_pde_cohorte["r2"],
+                "error_relativo_barw_pde": error_relativo_cohorte,
+                "error_porcentual_barw_pde": (
+                    100.0 * error_relativo_cohorte
+                ),
+            }
+        ]
+    )
+
+    tabla_cohorte_fija.to_csv(
+        RESULTADOS
+        / "comparacion_velocidad_cohorte_fija.csv",
+        index=False,
+    )
+
+    print("\n=== COHORTE FIJA DE SUPERVIVIENTES HASTA T=300 ===")
+    print(
+        tabla_cohorte_fija.to_string(index=False)
+    )
+
+
 
     print("\nResultados de la comparación:")
     print(

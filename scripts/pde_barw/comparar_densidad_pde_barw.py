@@ -34,6 +34,12 @@ FIGURAS = RESULTADOS / "figuras"
 FIGURAS.mkdir(parents=True, exist_ok=True)
 
 
+ARCHIVO_BARW_RESUMEN = (
+    RESULTADOS / "barw_resumen_semillas.csv"
+)
+
+
+
 def convertir_a_booleano( serie: pd.Series, ) -> pd.Series: 
     """ 
     Convierte de forma segura una columna leída desde CSV a booleanos. 
@@ -58,6 +64,7 @@ def main() -> None:
         ARCHIVO_BARW_HISTORIAL,
         ARCHIVO_BARW_CRUDOS,
         ARCHIVO_PDE,
+        ARCHIVO_BARW_RESUMEN,
     )
 
     for archivo in archivos_necesarios:
@@ -82,6 +89,12 @@ def main() -> None:
     perfiles_crudos_df = pd.read_csv(
         ARCHIVO_BARW_CRUDOS
     )
+
+
+    resumen_semillas_df = pd.read_csv(
+        ARCHIVO_BARW_RESUMEN
+    )
+
 
     columnas_historial = {
         "seed",
@@ -133,14 +146,85 @@ def main() -> None:
         perfiles_crudos_df["alive"]
     )
 
+
+    columnas_resumen = {
+        "seed",
+        "survived_to_T",
+    }
+
+    if not columnas_resumen.issubset(
+        resumen_semillas_df.columns
+    ):
+        faltantes = (
+            columnas_resumen
+            - set(resumen_semillas_df.columns)
+        )
+        raise ValueError(
+            "Faltan columnas en el resumen por semilla: "
+            + ", ".join(sorted(faltantes))
+        )
+
+    resumen_semillas_df["survived_to_T"] = convertir_a_booleano(
+        resumen_semillas_df["survived_to_T"]
+    )
+
+    semillas_cohorte = (
+        resumen_semillas_df.loc[
+            resumen_semillas_df["survived_to_T"],
+            "seed",
+        ]
+        .to_numpy(dtype=int)
+    )
+
+    if semillas_cohorte.size < 2:
+        raise ValueError(
+            "La cohorte fija debe contener al menos dos semillas."
+        )
+
+    historial_cohorte_df = historial_df[
+        historial_df["seed"].isin(semillas_cohorte)
+    ].copy()
+
+    perfiles_cohorte_df = perfiles_crudos_df[
+        perfiles_crudos_df["seed"].isin(semillas_cohorte)
+    ].copy()
+
+    conteo_semillas_por_tiempo = (
+        perfiles_cohorte_df
+        .groupby("time")["seed"]
+        .nunique()
+    )
+
+    if not np.all(
+        conteo_semillas_por_tiempo.to_numpy()
+        == semillas_cohorte.size
+    ):
+        raise RuntimeError(
+            "Faltan perfiles de alguna semilla de la cohorte "
+            "en uno o más tiempos."
+        )
+
+    if not perfiles_cohorte_df["alive"].all():
+        raise RuntimeError(
+            "Se ha incluido una realización no activa dentro "
+            "de la cohorte fija."
+        )
+
+    print(
+        "Cohorte fija para perfiles: "
+        f"{semillas_cohorte.size} semillas supervivientes "
+        "hasta T=300."
+    )
+
     barw = {
-        "history": historial_df.to_dict(
+        "history": historial_cohorte_df.to_dict(
             orient="records"
         ),
-        "profile_rows_raw": perfiles_crudos_df.to_dict(
+        "profile_rows_raw": perfiles_cohorte_df.to_dict(
             orient="records"
         ),
     }
+
 
     # ------------------------------------------------------------------
     # Carga de la solución PDE
