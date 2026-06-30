@@ -40,7 +40,7 @@ class BARWConfig:
     max_pasos : int = 1000000 #número máximo de pasos para evitar sobrecarga computacional
 
     #Gestionar autoaniquilación de puntas recién bifurcadas
-    pasos_exclusion_aniquilacion : int = 10 #número de pasos durante los cuales una punta recién bifurcada no puede ser aniquilada por estar cerca de su madre
+    pasos_exclusion_madre_hija : int = 10 #número de pasos durante los cuales una punta recién bifurcada no puede ser aniquilada por estar cerca de su madre
     pasos_exclusion_propia :int =6 #para hacer exclusion local y no de la rama entera
 
     #Añadimos dos modos distintos de colisión : punto-punto y punto_segmento

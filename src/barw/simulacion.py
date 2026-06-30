@@ -216,7 +216,7 @@ class SimulacionBARW:
                 #de esta forma nos da el paso en el que nace la hija, que siempre es > que el de la madre
             )
 
-            periodo_exclusion = (paso_actual-paso_bifurcacion <= self.config.pasos_exclusion_aniquilacion)
+            periodo_exclusion = (paso_actual-paso_bifurcacion <= self.config.pasos_exclusion_madre_hija)
             
             #esta sola NO es suficiente, porque va a evitar durante 6 pasos que haya colisiones entre madre e hija
             #pero si que deberiamos permitir colisiones con conductos mas antiguos de la madre

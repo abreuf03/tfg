@@ -6,13 +6,13 @@ from src.barw.simulacion import SimulacionBARW
 from src.barw.graficas import graficar_comparacion_semillas
 
 
-def ejecutar_semillas(semillas, config_base, usar_kdtree=True):
+def ejecutar_semillas(semillas, config_base, metodo_busqueda):
     resultados = []
 
     for semilla in semillas:
         config = replace(config_base, semilla=semilla)
 
-        simulacion = SimulacionBARW(config=config, usar_kdtree=usar_kdtree)
+        simulacion = SimulacionBARW(config=config, metodo_busqueda=metodo_busqueda)
         resultado = simulacion.ejecutar()
 
         historial = resultado["historial"]
@@ -44,7 +44,7 @@ def main():
     df = ejecutar_semillas(
         semillas=semillas,
         config_base=config_base,
-        usar_kdtree=True
+        metodo_busqueda=1
     )
 
     print(df)

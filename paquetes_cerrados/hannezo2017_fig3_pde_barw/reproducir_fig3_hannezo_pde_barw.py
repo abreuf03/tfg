@@ -429,7 +429,7 @@ def run_barw_ensemble(cfg: BARWEnsembleConfig) -> dict[str, object]:
             max_puntas=100000,
             max_pasos=max_steps,
         )
-        sim = SimulacionBARW(barw_cfg, usar_kdtree=True)
+        sim = SimulacionBARW(barw_cfg, metodo_busqueda=1)
         sim.inicializar()
         active = sum(p.activa for p in sim.puntas)
         extinction_time = math.nan

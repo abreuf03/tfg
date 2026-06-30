@@ -13,14 +13,14 @@ from src.barw.graficas import (
 )
 
 
-def ejecutar_una_semilla(config_base, semilla, usar_kdtree=True):
+def ejecutar_una_semilla(config_base, semilla, metodo_busqueda):
     """
     Ejecuta una simulación BARW para una semilla dada y devuelve sus métricas.
     """
 
     config = replace(config_base, semilla=semilla)
 
-    simulacion = SimulacionBARW(config=config, usar_kdtree=usar_kdtree)
+    simulacion = SimulacionBARW(config=config, metodo_busqueda=metodo_busqueda)
     resultado = simulacion.ejecutar()
 
     historial = resultado["historial"]
@@ -47,7 +47,7 @@ def ejecutar_una_semilla(config_base, semilla, usar_kdtree=True):
     }
 
 
-def ejecutar_muchas_semillas(num_semillas=100, usar_kdtree=True):
+def ejecutar_muchas_semillas(metodo,num_semillas=100, ):
     """
     Ejecuta el modelo para muchas semillas y devuelve una tabla con métricas.
     """
@@ -62,7 +62,7 @@ def ejecutar_muchas_semillas(num_semillas=100, usar_kdtree=True):
         metricas = ejecutar_una_semilla(
             config_base=config_base,
             semilla=semilla,
-            usar_kdtree=usar_kdtree,
+            metodo_busqueda=metodo,
         )
 
         resultados.append(metricas)
@@ -124,8 +124,8 @@ def main():
     num_semillas = 100
 
     df = ejecutar_muchas_semillas(
+        metodo_busqueda=1,
         num_semillas=num_semillas,
-        usar_kdtree=True,
     )
 
     resumen = resumen_estadistico(df)
