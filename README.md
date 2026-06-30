@@ -75,12 +75,12 @@ El script `scripts/validacion_semillas.py` ejecuta un conjunto de realizaciones 
 
 También verifica el balance de puntas:
 
-
-N_{\mathrm{act}}(n)=1+N_{\mathrm{bif}}(n)-N_{\mathrm{desact}}(n),
-
-```math
-donde `N_desact` incluye las desactivaciones por proximidad y por salida de frontera. Esta identidad comprueba la coherencia contable del simulador, pero no constituye una estimación del balance generacional \(q\simeq0.5\) estudiado en el trabajo de referencia.
+```text
+N_act(n) = 1 + N_bif(n) - N_desact(n)
 ```
+
+donde `N_desact` incluye las desactivaciones por proximidad y por salida de frontera. Esta identidad comprueba la coherencia contable del simulador, pero no constituye una estimación del balance generacional `q ≈ 0.5` estudiado en el trabajo de referencia.
+
 ```bash
 python -m scripts.validacion_semillas
 ```
@@ -219,52 +219,50 @@ El script genera:
 
 ## Sistema de campo medio de dos especies
 
-El sistema de campo medio utilizado en el Capítulo 4 del TFG describe la densidad de puntas activas \(a(x,t)\) y la densidad de conductos inactivos \(i(x,t)\):
+El sistema de campo medio utilizado en el Capítulo 4 del TFG describe la densidad de puntas activas `a(x,t)` y la densidad de conductos inactivos `i(x,t)`:
 
-\[
-\partial_t a = D\,\partial_{xx}a+r_ba\left(1-\frac{a+i}{n_0}\right),
-\qquad
-\partial_t i=r_ea+\frac{r_b}{n_0}a(a+i).
-\]
+```text
+da/dt = D · d²a/dx² + rb · a · (1 - (a + i) / n0)
+di/dt = re · a + (rb / n0) · a · (a + i)
+```
 
 Para el pulso principal se emplean:
 
-\[
-D=1,\quad r_b=0.1,\quad r_e=1,\quad n_0=1,
-\]
-\[
-L=280,\quad T=300,\quad \Delta x=0.2,\quad \Delta t=0.02.
-\]
+```text
+D = 1       rb = 0.1       re = 1       n0 = 1
+L = 280     T = 300        dx = 0.2     dt = 0.02
+```
 
 La solución forma un pulso localizado de densidad activa que se desplaza hacia la derecha y deja detrás una región de densidad inactiva aproximadamente uniforme.
 
 ### Velocidad del pulso
 
-La estimación principal sobre la ventana \([200,300]\) es:
+La estimación principal sobre la ventana `[200, 300]` es:
 
-\[
-V_{\mathrm{num}}=0.611889,
-\qquad
-V^*=2\sqrt{D r_b}=0.632456.
-\]
+```text
+V_num = 0.611889
+V_teórica = 2 · sqrt(D · rb) = 0.632456
+Error relativo = 3.25 %
+```
 
-La discrepancia relativa es del \(3.25\%\). El análisis de sensibilidad respecto a malla, paso temporal, tamaño del dominio y ventana de ajuste muestra variaciones inferiores al \(0.4\%\) para la configuración estudiada. Este resultado respalda la robustez numérica de la estimación, pero no constituye una verificación exacta de la velocidad asintótica teórica.
+El análisis de sensibilidad respecto a malla, paso temporal, tamaño del dominio y ventana de ajuste muestra variaciones inferiores al `0.4 %` para la configuración estudiada. Este resultado respalda la robustez numérica de la estimación, pero no constituye una verificación exacta de la velocidad asintótica teórica.
 
 ### Asimetría de las colas
 
-La predicción analítica bajo las aproximaciones \(a\ll i\) y \(r_b/r_e\ll1\) es:
+La predicción analítica bajo las aproximaciones `a << i` y `rb/re << 1` es:
 
-\[
-\frac{\gamma_-}{\gamma_+}=\sqrt{2}-1\simeq0.414214.
-\]
+```text
+gamma_trasera / gamma_delantera = sqrt(2) - 1 ≈ 0.414214
+```
 
 El perfil colapsado del experimento principal proporciona:
 
-\[
-\frac{\gamma_-}{\gamma_+}=0.630961.
-\]
+```text
+gamma_trasera / gamma_delantera = 0.630961
+Error relativo = 52.33 %
+```
 
-Por tanto, el pulso reproduce cualitativamente la asimetría esperada —la cola trasera es más extensa que la delantera—, pero no verifica cuantitativamente la relación asintótica. La discrepancia relativa del experimento principal es del \(52.33\%\), y los análisis de sensibilidad con perfiles individuales siguen alejados del valor teórico.
+Por tanto, el pulso reproduce cualitativamente la asimetría esperada —la cola trasera es más extensa que la delantera—, pero no verifica cuantitativamente la relación asintótica. Los análisis de sensibilidad con perfiles individuales siguen alejados del valor teórico.
 
 Los scripts principales son:
 
@@ -282,11 +280,11 @@ Los resultados se guardan en `resultados/campo_medio_cap4/`.
 
 Los scripts de `scripts/pde_barw/` construyen observables longitudinales comunes para comparar la red bidimensional discreta BARW con la solución unidimensional continua de campo medio.
 
-La comparación parte de 100 realizaciones BARW, con semillas `1000`--`1099`, y de la solución PDE anterior. La comparación principal se realiza sobre una cohorte fija formada por las 19 realizaciones que permanecen activas hasta \(T=300\). La fracción de supervivencia final es:
+La comparación parte de 100 realizaciones BARW, con semillas `1000`--`1099`, y de la solución PDE anterior. La comparación principal se realiza sobre una cohorte fija formada por las 19 realizaciones que permanecen activas hasta `T = 300`. La fracción de supervivencia final es:
 
-\[
-S(300)=0.19.
-\]
+```text
+S(300) = 0.19
+```
 
 La red BARW se proyecta sobre el eje longitudinal y se divide en 120 intervalos. La densidad activa se obtiene a partir del número de puntas activas de cada intervalo; la densidad de conductos se obtiene a partir de la longitud de los segmentos, asignados según su punto medio longitudinal. Para comparar formas macroscópicas, los perfiles se alinean en un marco móvil y se suavizan mediante núcleos gaussianos, conservando también los datos sin suavizar y sus errores estándar.
 
@@ -296,13 +294,12 @@ El procedimiento adapta funciones auxiliares del código de referencia facilitad
 
 El frente BARW se define como el punto más avanzado de la red acumulada de conductos. En la PDE se usa el borde derecho de la región donde:
 
-\[
-a(x,t)\geq0.08\,a_{\max}(t),
-\qquad
-a_{\max}(t)=\max_x a(x,t).
-\]
+```text
+a(x,t) >= 0.08 · a_max(t)
+a_max(t) = máximo de a(x,t) sobre x
+```
 
-La comparación principal usa la cohorte fija de 19 redes supervivientes hasta \(T=300\), con ventana de ajuste \([150,300]\):
+La comparación principal usa la cohorte fija de 19 redes supervivientes hasta `T = 300`, con ventana de ajuste `[150, 300]`:
 
 ```text
 V_BARW = 0.740937
@@ -319,7 +316,7 @@ Los análisis basados en supervivientes dinámicos se conservan como diagnóstic
 
 ### Posición del pico activo
 
-Como observable complementario se compara la posición del máximo de la densidad activa. En el BARW, el pico se estima mediante el centro del intervalo con mayor densidad de puntas activas; en la PDE se utiliza el máximo interpolado de \(a(x,t)\).
+Como observable complementario se compara la posición del máximo de la densidad activa. En el BARW, el pico se estima mediante el centro del intervalo con mayor densidad de puntas activas; en la PDE se utiliza el máximo interpolado de `a(x,t)`.
 
 Este observable presenta mayor variabilidad que el frente, debido al carácter discreto del BARW, la discretización longitudinal y el número finito de puntas activas.
 
@@ -327,7 +324,7 @@ Este observable presenta mayor variabilidad que el frente, debido al carácter d
 
 ### Densidad de puntas activas
 
-Para comparar la forma del pulso activo, cada realización de la cohorte fija se traslada al marco móvil \(z=x-x_{\mathrm{peak}}(t)\). Se representan el perfil BARW sin suavizar, una versión suavizada mediante núcleo gaussiano, el error estándar y el perfil PDE normalizado.
+Para comparar la forma del pulso activo, cada realización de la cohorte fija se traslada al marco móvil `z = x - x_peak(t)`. Se representan el perfil BARW sin suavizar, una versión suavizada mediante núcleo gaussiano, el error estándar y el perfil PDE normalizado.
 
 ```text
 RMSE activo        = 0.132957
