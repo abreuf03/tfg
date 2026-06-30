@@ -75,9 +75,7 @@ El script `scripts/validacion_semillas.py` ejecuta un conjunto de realizaciones 
 
 También verifica el balance de puntas:
 $$
-
 N_{\mathrm{act}}(n)=1+N_{\mathrm{bif}}(n)-N_{\mathrm{desact}}(n),
-
 $$
 donde `N_desact` incluye las desactivaciones por proximidad y por salida de frontera. Esta identidad comprueba la coherencia contable del simulador, pero no constituye una estimación del balance generacional \(q\simeq0.5\) estudiado en el trabajo de referencia.
 
