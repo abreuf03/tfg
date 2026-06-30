@@ -23,7 +23,7 @@ python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 ```
 
-Las dependencias principales son `numpy`, `scipy`, `pandas`, `matplotlib` y `pytest`. Para generar informes de cobertura, añade también `pytest-cov` a `requirements.txt`.
+Las dependencias principales son `numpy`, `scipy`, `pandas`, `matplotlib` y `pytest`.
 
 Los módulos propios se encuentran en `src/`, en particular `src.barw`, `src.campo_medio`, `src.malla`, `src.calor` y `src.fisherkpp`.
 
