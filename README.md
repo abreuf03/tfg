@@ -74,11 +74,11 @@ Los resultados se guardan en `resultados/comparacion_punto_punto_segmento/`.
 El script `scripts/validacion_semillas.py` ejecuta un conjunto de realizaciones independientes del BARW para caracterizar la variabilidad entre redes. Registra, entre otros observables, segmentos, bifurcaciones, desactivaciones, tiempo final y avance máximo longitudinal.
 
 También verifica el balance de puntas:
-
+$$
 \[
 N_{\mathrm{act}}(n)=1+N_{\mathrm{bif}}(n)-N_{\mathrm{desact}}(n),
 \]
-
+$$
 donde `N_desact` incluye las desactivaciones por proximidad y por salida de frontera. Esta identidad comprueba la coherencia contable del simulador, pero no constituye una estimación del balance generacional \(q\simeq0.5\) estudiado en el trabajo de referencia.
 
 ```bash
@@ -456,31 +456,6 @@ El orden final es importante:
 
 Los archivos `.npz` y algunos CSV generados pueden estar ignorados por Git debido a su tamaño. El pipeline anterior permite regenerarlos desde un clon limpio.
 
-## Trazabilidad de los resultados
-
-Para documentar el entorno de ejecución de los resultados definitivos, registra al menos la versión de Python, dependencias, sistema, hardware, estado de Git y commit utilizado:
-
-```bash
-mkdir -p resultados/trazabilidad
-
-python --version > resultados/trazabilidad/python_version.txt
-python -m pip freeze > resultados/trazabilidad/dependencias.txt
-python -c "import platform, os; print(platform.platform()); print(platform.processor()); print(os.cpu_count())" > resultados/trazabilidad/sistema.txt
-
-git rev-parse HEAD > resultados/trazabilidad/commit.txt
-git status --short > resultados/trazabilidad/git_status.txt
-```
-
-Una vez comprobado el pipeline completo, crea una versión inmutable para citarla en la memoria:
-
-```bash
-git add .
-git commit -m "Versión reproducible del TFG"
-git tag -a v1.0-tfg -m "Resultados citados en la memoria"
-git push origin main --tags
-```
-
-La memoria debe citar el tag y el hash de commit asociados a la versión usada para generar los resultados finales.
 
 ## Comentario final
 
