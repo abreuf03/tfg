@@ -74,11 +74,13 @@ Los resultados se guardan en `resultados/comparacion_punto_punto_segmento/`.
 El script `scripts/validacion_semillas.py` ejecuta un conjunto de realizaciones independientes del BARW para caracterizar la variabilidad entre redes. Registra, entre otros observables, segmentos, bifurcaciones, desactivaciones, tiempo final y avance máximo longitudinal.
 
 También verifica el balance de puntas:
-$$
-N_{\mathrm{act}}(n)=1+N_{\mathrm{bif}}(n)-N_{\mathrm{desact}}(n),
-$$
-donde `N_desact` incluye las desactivaciones por proximidad y por salida de frontera. Esta identidad comprueba la coherencia contable del simulador, pero no constituye una estimación del balance generacional \(q\simeq0.5\) estudiado en el trabajo de referencia.
 
+
+N_{\mathrm{act}}(n)=1+N_{\mathrm{bif}}(n)-N_{\mathrm{desact}}(n),
+
+```math
+donde `N_desact` incluye las desactivaciones por proximidad y por salida de frontera. Esta identidad comprueba la coherencia contable del simulador, pero no constituye una estimación del balance generacional \(q\simeq0.5\) estudiado en el trabajo de referencia.
+```
 ```bash
 python -m scripts.validacion_semillas
 ```
