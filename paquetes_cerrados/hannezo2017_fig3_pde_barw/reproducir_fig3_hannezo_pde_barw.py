@@ -420,7 +420,7 @@ def run_barw_ensemble(cfg: BARWEnsembleConfig) -> dict[str, object]:
         barw_cfg = BARWConfig(
             Lx=cfg.Lx,
             Ly=cfg.Ly,
-            rb=cfg.rb,
+            pb=cfg.rb,
             Ra=cfg.Ra,
             long_paso=cfg.step_length,
             tiempo_paso=cfg.step_time,
@@ -464,7 +464,7 @@ def run_barw_ensemble(cfg: BARWEnsembleConfig) -> dict[str, object]:
                     extinction_time = float((step + 1) * cfg.step_time)
 
         if seed == cfg.seeds[0]:
-            for idx, (x0, y0, x1, y1, id_rama) in enumerate(sim.conducto):
+            for idx, (x0, y0, x1, y1, id_rama, *_ ) in enumerate(sim.conducto):
                 final_segments.append(
                     {
                         "segment_id": idx,

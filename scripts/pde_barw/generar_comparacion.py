@@ -264,7 +264,7 @@ def ejecutar_barw_comparacion(cfg:BARWEnsembleConfig,) -> dict[str, object]:
             ang_amplitud=np.pi / 10, 
             angulo_bifurcacion=np.pi / 6, 
             pasos_exclusion_propia=6, 
-            pasos_exclusion_aniquilacion=10, 
+            pasos_exclusion_madre_hija=10, 
             modo_colision="punto_punto", 
             semilla=int(seed), 
             max_puntas=100_000, 

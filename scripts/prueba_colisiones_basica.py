@@ -16,7 +16,7 @@ def ejecutar_prueba(modo_colision: str) -> None:
         ang_amplitud=0.0,
         Ra=3.0,
         pasos_exclusion_propia=6,
-        pasos_exclusion_aniquilacion=10,
+        pasos_exclusion_madre_hija=10,
         modo_colision=modo_colision,
         semilla=1,
     )

@@ -29,7 +29,7 @@ def ejecutar_sensibilidad_exclusion(
             config = replace(
                 config_base,
                 semilla=semilla,
-                pasos_exclusion_aniquilacion=gracia,
+                pasos_exclusion_madre_hija=gracia,
             )
 
             simulacion = SimulacionBARW(

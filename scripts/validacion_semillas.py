@@ -124,7 +124,7 @@ def main():
     num_semillas = 100
 
     df = ejecutar_muchas_semillas(
-        metodo_busqueda=1,
+        metodo=1,
         num_semillas=num_semillas,
     )
 

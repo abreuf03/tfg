@@ -183,7 +183,7 @@ def main() -> None:
     # Ambos modos comparten exactamente estos parámetros.
     config_base = BARWConfig(
         pasos_exclusion_propia=6,
-        pasos_exclusion_aniquilacion=10,
+        pasos_exclusion_madre_hija=10,
     )
 
     # Se utiliza búsqueda exhaustiva en ambos modos para no mezclar
