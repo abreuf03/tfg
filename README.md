@@ -343,14 +343,24 @@ Esta animación permite observar paso a paso el avance de las puntas activas, la
 Desde la raíz del repositorio, ejecutar:
 
 ```bash
-python barw.py
-python benchmark_kdtree.py
-python -m scripts.benchmark_completo_barw
-python test_inicial.py
-python test_cn.py
-python test_fisher.py
-python test_fisher_cn.py
-python bramson_fisher.py
+# Desde la raíz del repositorio
+python -m pytest -q
+python -m pytest --cov=src --cov-report=term-missing
+# Validaciones numéricas
+python -m scripts.script_inicial
+python -m scripts.script_cn
+python -m scripts.script_fisher
+python -m scripts.script_fisher_cn
+python -m scripts.bramson_fisher
+# BARW y búsqueda espacial
+python -m scripts.barw
+python -m scripts.comparacion_pp_ps
+python -m scripts.validacion_semillas
+python -m scripts.benchmark_canonico_busquedas_barw
+# PDE y comparación BARW--PDE
+python -m scripts.pde_barw.simular_pulso_pde
+python -m scripts.pde_barw.analizar_velocidad_pde
+python -m scripts.pde_barw.analizar_asimetria_pde
 python -m scripts.pde_barw.generar_comparacion
 python -m scripts.pde_barw.comparar_velocidad_pde_barw
 python -m scripts.pde_barw.comparar_densidad_pde_barw
