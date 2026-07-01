@@ -3,3 +3,4 @@ scipy>=1.11
 matplotlib>=3.8
 pytest>=8.0
 pandas>=2.0
+pytest-cov>=5.0
