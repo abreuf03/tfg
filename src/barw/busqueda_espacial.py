@@ -315,6 +315,18 @@ class QuadTreeIndices:
     
     def _obtener_hijo(self, nodo: QuadTreeNode, indice: int) -> QuadTreeNode: #equivale a COMPARE en el paper
         """
+        Determina el nodo hijo del QuadTree que contiene un punto almacenado.
+
+        Parámetros:
+        nodo (QuadTreeNode): Nodo interno ya subdividido cuyos hijos
+            representan los cuatro cuadrantes de su región espacial.
+        indice (int): Índice del punto dentro de ``self.puntos`` cuya región
+            hija se desea determinar.
+
+        Devuelve:
+            QuadTreeNode: Nodo hijo que contiene el punto indicado. Los hijos se
+            almacenan en el orden suroeste, sureste, noroeste y noreste.
+
         """
         if nodo.hijos is None:
             raise ValueError("El nodo no está subdividido.")

@@ -194,11 +194,37 @@ class SimulacionBARW:
         return np.linalg.norm(p - proyeccion)
     
     def exclusion_local(self, punta:Punta, id_rama_candidato : int, pasos_acumulados:int, paso_actual:int)->bool:
-        #criterio de colision:
-        #candidato de mi misma rama ->ignoro solo si es reciente
-        #candidato madre/hija -> ignoro durante el periodo de exclusion de bifurcacion
-        #candidato de otra rama -> terminacion
+        """
+        Determina si un candidato cercano debe excluirse temporalmente de la
+        comprobación de colisión de una punta activa.
 
+        La función aplica las exclusiones locales introducidas para evitar
+        terminaciones artificiales inmediatamente después de la elongación o de
+        una bifurcación. Un valor ``True`` indica que el candidato no debe provocar
+        la terminación de la punta en el paso actual; un valor ``False`` indica que
+        el candidato puede considerarse una colisión válida.
+
+        Criterios aplicados:
+            - Misma rama: se ignoran únicamente los puntos depositados durante los
+            últimos ``pasos_exclusion_propia`` pasos.
+            - Ramas madre--hija: durante el periodo de gracia posterior a la
+            bifurcación, se ignoran solo los puntos situados en la vecindad temporal
+            de dicha bifurcación.
+            - Ramas no emparentadas: no se aplica exclusión y el candidato puede
+            provocar la terminación.
+
+        Parámetros:
+            punta (Punta): Punta activa para la que se está evaluando la posible
+                colisión.
+            id_rama_candidato (int): Identificador de la rama a la que pertenece el
+                punto o segmento candidato.
+            pasos_acumulados (int): Paso temporal en el que se depositó el candidato.
+            paso_actual (int): Paso temporal actual de la simulación.
+
+        Devuelve:
+            bool: ``True`` si el candidato debe ignorarse por una exclusión local;
+            ``False`` si debe mantenerse como posible causa de terminación.
+        """
         
 
         if id_rama_candidato==punta.id_rama:
@@ -232,7 +258,21 @@ class SimulacionBARW:
     
 
     def hay_colision_punto_punto( self, punta: Punta, x_nueva: float, y_nueva: float, paso_actual: int, ) -> bool: 
-        
+        """
+        Comprueba si una punta propuesta colisiona con algún punto de conducto
+        previamente depositado mediante el criterio punto--punto.
+
+        Parámetros:
+            punta (Punta): Punta activa para la que se evalúa la posible colisión.
+            x_nueva (float): Coordenada horizontal de la posición propuesta.
+            y_nueva (float): Coordenada vertical de la posición propuesta.
+            paso_actual (int): Paso temporal actual de la simulación.
+
+        Devuelve:
+            bool: ``True`` si existe al menos un punto cercano que constituye una
+            colisión válida y debe provocar la terminación de la punta; ``False`` en
+            caso contrario.
+        """
         indices_cercanos = self.busqueda_espacial.buscar_puntas_cercanas( x_nueva, y_nueva, self.config.Ra, ) 
         
         for indice in indices_cercanos: 
@@ -244,6 +284,21 @@ class SimulacionBARW:
         return False 
     
     def hay_colision_punto_segmento( self, punta: Punta, x_nueva: float, y_nueva: float, paso_actual: int, ) -> bool: 
+        """
+        Comprueba si una punta propuesta colisiona con algún segmento de conducto
+        previamente depositado mediante el criterio punto--segmento.
+
+        Parámetros:
+            punta (Punta): Punta activa para la que se evalúa la posible colisión.
+            x_nueva (float): Coordenada horizontal de la posición propuesta.
+            y_nueva (float): Coordenada vertical de la posición propuesta.
+            paso_actual (int): Paso temporal actual de la simulación.
+
+        Devuelve:
+            bool: ``True`` si existe al menos un segmento cuya distancia a la posición
+            propuesta es menor o igual que el radio de aniquilación y que no está
+            excluido por las reglas locales; ``False`` en caso contrario.
+        """
        
         for segmento in self.conducto: 
            ( x0, y0, x1, y1, id_rama_candidata, paso_deposito, ) = segmento 
@@ -256,6 +311,19 @@ class SimulacionBARW:
         return False 
     
     def hay_colision( self, punta: Punta, x_nueva: float, y_nueva: float, paso_actual: int, ) -> bool: 
+        """
+        Selecciona y aplica el criterio de detección de colisiones configurado.
+
+        Parámetros:
+            punta (Punta): Punta activa para la que se evalúa la posible colisión.
+            x_nueva (float): Coordenada horizontal de la posición propuesta.
+            y_nueva (float): Coordenada vertical de la posición propuesta.
+            paso_actual (int): Paso temporal actual de la simulación.
+
+        Devuelve:
+            bool: ``True`` si la posición propuesta produce una colisión válida según
+            el criterio configurado; ``False`` en caso contrario.
+        """
         if self.config.modo_colision == "punto_punto": 
             return self.hay_colision_punto_punto( punta, x_nueva, y_nueva, paso_actual, ) 
         return self.hay_colision_punto_segmento( punta, x_nueva, y_nueva, paso_actual, )
