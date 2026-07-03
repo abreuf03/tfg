@@ -1,0 +1,23 @@
+
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+type: software
+title: "Morfogénesis Computacional: Análisis, Simulación y Optimización"
+abstract: "Software para simulaciones estocásticas BARW, modelos de reacción-difusión de campo medio, validación numérica y benchmarks de búsqueda espacial en morfogénesis ramificada."
+authors:
+  - family-names: "Abreu"
+    given-names: "Elena"
+  - family-names: "Campos"
+    given-names: "Juan"
+  - family-names: "Fábregas"
+    given-names: "René"
+license: "MIT"
+repository-code: "https://github.com/abreuf03/tfg"
+keywords: 
+  - morfogénesis ramificada 
+  - BARW 
+  - ecuaciones de reacción-difusión 
+  - aproximación de campo medio 
+  - simulación estocástica 
+  - QuadTree 
+  - cKDTree
