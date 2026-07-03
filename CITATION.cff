@@ -12,6 +12,9 @@ authors:
   - family-names: "Fábregas"
     given-names: "René"
 license: "MIT"
+version: "v1.0.0"
+date-released: 2026-07-03
+doi: 10.5281/zenodo.21175189
 repository-code: "https://github.com/abreuf03/tfg"
 keywords: 
   - morfogénesis ramificada 
