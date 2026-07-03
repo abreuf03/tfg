@@ -1,5 +1,7 @@
 # Simulación BARW y ecuaciones de reacción-difusión
 
+[![DOI](https://zenodo.org/badge/1240894497.svg)](https://doi.org/10.5281/zenodo.21175188)
+
 Este repositorio contiene una implementación numérica orientada al estudio de procesos de crecimiento ramificado tipo BARW (*Branching and Annihilating Random Walks*) y de modelos continuos de reacción--difusión relacionados. Incluye la ecuación del calor, Fisher--KPP y el sistema de campo medio de dos especies utilizado para comparar una descripción estocástica de agentes con una aproximación determinista suavizada.
 
 Además de los solvers numéricos, el repositorio incorpora validaciones geométricas de la regla de terminación del BARW, benchmarks de búsqueda espacial mediante búsqueda exhaustiva, `cKDTree` y QuadTree, y un protocolo de comparación cuantitativa BARW--PDE.
@@ -453,6 +455,10 @@ El orden final es importante:
 
 Los archivos `.npz` y algunos CSV generados pueden estar ignorados por Git debido a su tamaño. El pipeline anterior permite regenerarlos desde un clon limpio.
 
+## Cómo citar 
+La versión estable `v1.0.0` de este software está archivada en Zenodo. > Abreu, Elena; Campo, Juan; Fabregas, Rene. (2026). *Morfogénesis Computacional: Análisis, Simulación y Optimización* (Version v1.0.0) [Software]. Zenodo. https://doi.org/10.5281/zenodo.21175189 El DOI específico de la versión `v1.0.0` es: 
+```text
+10.5281/zenodo.21175189
 
 ## Comentario final
 
