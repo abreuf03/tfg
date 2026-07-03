@@ -459,7 +459,7 @@ Los archivos `.npz` y algunos CSV generados pueden estar ignorados por Git debid
 La versión estable `v1.0.0` de este software está archivada en Zenodo. > Abreu, Elena; Campo, Juan; Fabregas, Rene. (2026). *Morfogénesis Computacional: Análisis, Simulación y Optimización* (Version v1.0.0) [Software]. Zenodo. https://doi.org/10.5281/zenodo.21175189 El DOI específico de la versión `v1.0.0` es: 
 ```text
 10.5281/zenodo.21175189
-
+```
 ## Comentario final
 
 El repositorio documenta una implementación reproducible del modelo BARW, métodos numéricos para modelos de reacción--difusión y una comparación con el sistema de campo medio de dos especies. Los resultados muestran que la PDE reproduce observables longitudinales suavizados, especialmente la forma macroscópica del pulso activo, pero no captura con precisión la velocidad de la cohorte fija, la extinción aleatoria, las fluctuaciones entre realizaciones ni la geometría bidimensional individual.
